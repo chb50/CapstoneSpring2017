@@ -2,7 +2,7 @@ from flask import Flask, render_template
 import os, sys
 from flask_mysqldb import MySQL
 
-#route root html page to authorization.html (will change to front page later)
+#authenticate the user with mysql 
 mysql = MySQL()
 app = Flask(__name__)
 app.config['MYSQL_HOST'] = 'localhost'
@@ -21,7 +21,7 @@ def main():
 	cur.execute(sql)
 
 	results = cur.fetchall()
-	return results[0]
+	return render_template("database.html", table=results)
 	#return str(results[0])
 
 	#render_template("authorization.html")
