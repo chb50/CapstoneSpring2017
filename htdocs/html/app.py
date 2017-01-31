@@ -15,11 +15,17 @@ mysql.init_app(app)
 def main():
 	#connect to database
 	cur = mysql.connect.cursor()
-	cur.execute('''SELECT * FROM TESTTABLE''')
-	rv = cur.fetchall()
-	return str(rv)#render_template("authorization.html")
+
+	#execute the sql command
+	sql = "SELECT username FROM TESTTABLE"
+	cur.execute(sql)
+
+	results = cur.fetchall()
+	return results[0]
+	#return str(results[0])
+
+	#render_template("authorization.html")
 
 if __name__ == "__main__":
-
 	app.run(debug = True)
 
