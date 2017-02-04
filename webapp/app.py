@@ -17,14 +17,19 @@ def main():
 	cur = mysql.connect.cursor()
 
 	#execute the sql command
-	sql = "SELECT username FROM TESTTABLE"
+	sql = "SELECT * FROM TESTTABLE"
 	cur.execute(sql)
 
 	results = cur.fetchall()
-	return render_template("database.html", table=results)
-	#return str(results[0])
+	table = [] 
 
-	#render_template("authorization.html")
+	for i in range(0,len(results)):
+		table.append(results[i])
+
+	for i in range(len(results)-1, 10):
+		table.append(" ")
+
+	return render_template("database.html", table=table, length=len(results))
 
 if __name__ == "__main__":
 	app.run(debug = True)
