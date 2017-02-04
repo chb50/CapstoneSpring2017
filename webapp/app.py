@@ -2,6 +2,8 @@ from flask import Flask, render_template
 import os, sys
 from flask_mysqldb import MySQL
 
+#In the database make the date and time a char of length 10
+
 #authenticate the user with mysql 
 mysql = MySQL()
 app = Flask(__name__)
@@ -15,7 +17,7 @@ mysql.init_app(app)
 def main():
 	#connect to database
 	cur = mysql.connect.cursor()
-
+	
 	#execute the sql command
 	sql = "SELECT * FROM TESTTABLE"
 	cur.execute(sql)
