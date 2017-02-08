@@ -9,12 +9,14 @@ from MySQLdb import escape_string as thrwart
 import gc
 from flask.ext.bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
+from flask.ext.hashing import Hashing
 
 
 from flaskext.mysql import MySQL
 # create the application object
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
+hashgun = Hashing(app)
 # config
 app.secret_key = 'my precious'
 
@@ -26,13 +28,21 @@ app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
 
 
-@app.route("/register")
+@app.route("/register",methods=['GET','POST'])
 def register():
-	regname = request.form.get('username',None)
-	regpw = request.form.get('password',None)
-	cursor1 = mysql.connect().cursor()
-	cursor1.execute("INSERT INTO user(userID,userName,password) VALUES ( (%s,%s, %s)",(1,regname,regpw))
-	mysql.connect.commit()
+	if request.method == 'POST':
+		hello = 'hello'
+		regname = request.form.get('username')
+		regpw = request.form.get('password')
+		conn = mysql.connect()
+		cursor1 = conn.cursor()
+		pwhash = hashgun.hash_value(regpw)
+	#sql = "INSERT INTO user (userID,userName,password) VALUES %d,%s,%s " (10,'cedric','cedrictwin')
+	#sql = "INSERT INTO user (userID, userName, password) values ('%d', '%s', '%s')" % (, regname, regpw)
+		sql = "INSERT INTO user (userName, password) values ('%s', '%s')" % (regname,pwhash)
+		cursor1.execute(sql)
+		conn.commit()
+		return redirect(url_for('login'))
 	return render_template('register.html')
 
 	#regname = request.form['username']
@@ -85,9 +95,11 @@ def login():
     error = None
     if request.method == 'POST':
 		username = request.form['username']
-		password = request.form['password']
+		password1 = request.form['password']
+		password = hashgun.hash_value(password1)
 		cursor = mysql.connect().cursor()
 		cursor.execute("SELECT * from User where Username='" + username + "' and Password='" + password + "'")
+		#cursor.execute("SELECT * from User where Username='" + username + "'")
 		data = cursor.fetchone()
 		if data is None:
 			return "Username or Password is wrong"
