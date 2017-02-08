@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- <script src="jquery.min.js"></script> -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<!-- <script type="text/javascript" src="js/jquery.min.js"></script> -->
+<script>
+
+var outputText = ""; 
+var initialLength = '{{length}}';
+
+function appendText() {
+	var maxUsers = 10;
+
+	var table = new Array(maxUsers)
+	table[0] = '{{table[0][0]}}';
+	table[1] = '{{table[1][0]}}';
+	table[2] = '{{table[2][0]}}';
+	table[3] = '{{table[3][0]}}';
+	table[4] = '{{table[4][0]}}';
+	table[5] = '{{table[5][0]}}';
+	table[6] = '{{table[6][0]}}';
+	table[7] = '{{table[7][0]}}';
+	table[8] = '{{table[8][0]}}';
+	table[9] = '{{table[9][0]}}';
+
+	for(var i = 1; i < 11; i++){
+		outputText += i + ". ";
+		outputText += table[i-1];
+		outputText += "<br>";
+	}	
+
+	refreshDisplay();
+
+}
+
+function refreshDisplay() {
+
+    document.getElementById('table').innerHTML = outputText;
+}
+
+</script>
+</head>
+<body>
+
+<p>Smart Gun DB</p>
+<button onclick="appendText()">Refresh Database</button>
+<p id = "table"></p>
+
+
+</body>
+</html>

@@ -2,7 +2,9 @@ from flask import Flask, render_template
 import os, sys
 from flask_mysqldb import MySQL
 
-#route root html page to authorization.html (will change to front page later)
+#In the database make the date and time a char of length 10
+
+#authenticate the user with mysql 
 mysql = MySQL()
 app = Flask(__name__)
 app.config['MYSQL_HOST'] = '172.27.225.11'
@@ -15,16 +17,21 @@ mysql.init_app(app)
 def main():
 	#connect to database
 	cur = mysql.connect.cursor()
-
+	
 	#execute the sql command
-	sql = "SELECT username FROM TESTTABLE"
+	sql = "SELECT * FROM TESTTABLE"
 	cur.execute(sql)
 
 	results = cur.fetchall()
-	return results[0]
-	#return str(results[0])
+	table = [] 
 
-	#render_template("authorization.html")
+	for i in range(0,len(results)):
+		table.append(results[i])
+
+	for i in range(len(results)-1, 10):
+		table.append(" ")
+
+	return render_template("database.html", table=table, length=len(results))
 
 if __name__ == "__main__":
 	app.run(debug = True)
