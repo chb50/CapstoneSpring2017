@@ -7,6 +7,7 @@
 <script>
 
 var outputText = ""; 
+var initialLength = '{{length}}';
 
 function appendText() {
 	var maxUsers = 10;
@@ -34,6 +35,9 @@ function appendText() {
 }
 
 function refreshDisplay() {
+	var element = document.getElementById("table");
+	element.parentNode.removeChild(element);
+	
     document.getElementById('table').innerHTML = outputText;
 }
 
