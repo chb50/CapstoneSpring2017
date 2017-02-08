@@ -5,7 +5,7 @@ from flask_mysqldb import MySQL
 #route root html page to authorization.html (will change to front page later)
 mysql = MySQL()
 app = Flask(__name__)
-app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_HOST'] = '172.27.225.11'
 app.config['MYSQL_USER'] = 'capstone'
 app.config['MYSQL_PASSWORD'] = 'password'
 app.config['MYSQL_DB'] = 'TESTMCU'
