@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <title>Flask Intro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
@@ -10,9 +11,27 @@
       <h1>Welcome to Flask!</h1>
       <br>
       <p>Click <a href="/logout">here</a> to logout.</p>
+	  <button onclick="myFunction()">Click for device</button>
+	  <p id = "test"></p>
+	  </form>
+	  <script>
+	  function myFunction()
+	  {
+		var input = prompt("Please enter smartgun code");
+		if(input != null)
+		{
+			document.getElementById("test").innerHTML = "ID IS" + " "+input;
+			$(document).ready(function(){document.append("TEST");});
+			$.post("/",{"test": input})
+			
+		}
+	  }
+	  </script>
       {% for message in get_flashed_messages() %}
         {{ message }}
       {% endfor %}
     </div>
+	<script type=text/javascript src="{{
+  url_for('static', filename='jquery.js') }}"></script>
   </body>
 </html>
