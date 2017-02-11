@@ -79,10 +79,18 @@ def login_required(f):
     return wrap
 
 # use decorators to link the function to a url
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
-    return render_template('index.html')  # render a template
+	if request.method == 'POST':
+		regid = request.form.get('test')
+		conn1 = mysql.connect()
+		cursor2 = conn1.cursor()
+		sql1 = "INSERT INTO user (userName, password) values ('%s', '%s')" % (regid,regid)
+		cursor2.execute(sql1)
+		conn1.commit()
+		return redirect(url_for('welcome'))
+	return render_template('index.html')  # render a template
     # return "Hello, World!"  # return a string
 
 @app.route('/welcome')
