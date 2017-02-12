@@ -7,10 +7,10 @@ from flask_mysqldb import MySQL
 #authenticate the user with mysql 
 mysql = MySQL()
 app = Flask(__name__)
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'capstone'
+app.config['MYSQL_HOST'] = '172.27.163.117'
+app.config['MYSQL_USER'] = 'stone'
 app.config['MYSQL_PASSWORD'] = 'password'
-app.config['MYSQL_DB'] = 'TESTMCU'
+app.config['MYSQL_DB'] = 'testmcu'
 mysql.init_app(app)
 
 HOST = 'localhost'

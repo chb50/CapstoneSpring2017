@@ -2,13 +2,13 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 from functools import wraps
 import MySQLdb
-from connect import connection
-from wtforms import Form,BooleanField,TextField,PasswordField,validators
-from passlib.hash import sha256_crypt
-from MySQLdb import escape_string as thrwart
-import gc
-from flask.ext.bcrypt import Bcrypt
-from flask_sqlalchemy import SQLAlchemy
+#from connect import connection
+#from wtforms import Form,BooleanField,TextField,PasswordField,validators
+#from passlib.hash import sha256_crypt
+#from MySQLdb import escape_string as thrwart
+#import gc
+#from flask.ext.bcrypt import Bcrypt
+#from flask_sqlalchemy import SQLAlchemy
 from flask.ext.hashing import Hashing
 
 
@@ -26,6 +26,12 @@ app.config['MYSQL_DATABASE_PASSWORD'] = 'slayer'
 app.config['MYSQL_DATABASE_DB'] = 'py'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
+
+class sgdPacket():
+	def __init__(self, name, NFCtag):
+		self.name = name
+		self.NFCtag = NFCtag
+
 
 
 @app.route("/register",methods=['GET','POST'])
@@ -95,7 +101,26 @@ def home():
 
 @app.route('/welcome')
 def welcome():
-    return render_template('welcome.html')  # render a template
+
+	table = [] 
+
+
+
+	table.append(sgdPacket("bob","qwe123qwe123qwe"))
+	table.append(sgdPacket("jillard","345ert345ert345"))
+	table.append(sgdPacket("dickling","uio789uio789uio"))
+
+	for i in range(len(table)-1,10):
+		table.append(sgdPacket(None, None))
+
+
+	# for i in range(0,len(results)):
+	# 	table.append(results[i])
+
+	# for i in range(len(results)-1, 10):
+	# 	table.append(" ")
+
+	return render_template("database.html", table=table, length=len(table))
 
 # route for handling the login page logic
 @app.route('/login', methods=['GET', 'POST'])
