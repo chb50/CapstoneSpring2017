@@ -2,20 +2,13 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 from functools import wraps
 import MySQLdb
-#from connect import connection
-#from wtforms import Form,BooleanField,TextField,PasswordField,validators
-#from passlib.hash import sha256_crypt
-#from MySQLdb import escape_string as thrwart
-#import gc
-#from flask.ext.bcrypt import Bcrypt
-#from flask_sqlalchemy import SQLAlchemy
 from flask.ext.hashing import Hashing
 
 
 from flaskext.mysql import MySQL
 # create the application object
 app = Flask(__name__)
-bcrypt = Bcrypt(app)
+#bcrypt = Bcrypt(app)
 hashgun = Hashing(app)
 # config
 app.secret_key = 'my precious'
