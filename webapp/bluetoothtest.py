@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, request, url_for
 import bluetooth
 
 # Need to install pybluez:
@@ -9,22 +9,32 @@ import bluetooth
 
 app = Flask(__name__)
 
-target_name = "V-iPhone" #This will connect to my iphone
+#target_name = "V-iPhone" #This will connect to my iphone
 target_address = None
 
 
-@app.route("/")
+@app.route("/", methods=['GET', 'POST'])
 def main():
 	connected = 0
-	nearby_devices = bluetooth.discover_devices()
+	error = None
+	target_name = " "
 
-	for bluetooth_addr in nearby_devices:
-		if target_name == bluetooth.lookup_name(bluetooth_addr):
-			target_address = bluetooth_addr
-			connected = 1
-			break
+	if request.method == 'POST':
+		target_name = request.form['ConnName']
+		nearby_devices = bluetooth.discover_devices()
+
+		for bluetooth_addr in nearby_devices:
+			if target_name == bluetooth.lookup_name(bluetooth_addr):
+				target_address = bluetooth_addr
+				connected = 1
+				return redirect(url_for('connect'))
+		
 
 	return render_template("bluetooth.html", connection=connected)
+
+@app.route("/connected")
+def connect():
+	return "Connected"
 
 if __name__ == "__main__":
 	app.run(debug = True)
