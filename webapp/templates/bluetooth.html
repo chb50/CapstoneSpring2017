@@ -1,0 +1,36 @@
+ <!DOCTYPE html>
+<html>
+
+<script>
+
+function connect(){
+	if('{{connection}}' == 1){
+		document.getElementById('display').innerHTML = "Connected";
+	} else {
+		document.getElementById('display').innerHTML = "Not connected";
+	}
+}
+
+
+</script>
+
+<body>
+
+<h1>Bluetooth Test</h1>
+
+<form method="post">
+	<fieldset>
+		<legend>Connection Name</legend>
+		<input type = "text" name="ConnName"><br><br>
+		<input type="submit" value="Connect">
+	</fieldset>
+
+
+</form>
+
+
+<button onclick="connect()">Connect</button>
+<p id = "display"></p>
+
+</body>
+</html>
