@@ -5,10 +5,10 @@ import time
 # create a socket object
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
-# get local machine name
-host = socket.gethostname()                           
+#Accept a connection from any machine
+host = "0.0.0.0"                         
 
-port = 9999                                           
+port = 9999                                         
 
 # bind to the port
 serversocket.bind((host, port))                                  
