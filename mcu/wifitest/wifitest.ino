@@ -19,9 +19,23 @@
  by Tom Igoe
  */
 
+/*** HOW TO CONNECT ***
+ *  SCK -> pin 52
+ *  MISO -> pin 50
+ *  MOSI -> pin 51
+ *  CS -> pin 44
+ *  IRQ -> pin 21
+ *  RST -> pin 46
+ *  EN -> power for now. can connect to digital
+ *  draw power from arduino uno so that nfc tag can fit
+ */
 
 #include <SPI.h>
 #include <WiFi101.h>
+
+#define MEGA_CS 44
+#define MEGA_IRQ 21
+#define MEGA_RST 46
 
 char ssid[] = "Samsung Galaxy Note Edge 8717"; //  your network SSID (name)
 char pass[] = "cakecake";    // your network password (use for WPA, or use as key for WEP)
@@ -40,7 +54,7 @@ IPAddress server(192,168,43,209);  // numeric IP for Google (no DNS)
 WiFiClient client;
 
 void setup() {
-  WiFi.setPins(8,7,4);
+  WiFi.setPins(MEGA_CS,MEGA_IRQ,MEGA_RST);
   //Initialize serial and wait for port to open:
   Serial.begin(9600);
   while (!Serial) {
