@@ -36,16 +36,23 @@
 #define MEGA_CS 44
 #define MEGA_IRQ 21
 #define MEGA_RST 46
+#define PORT 9999
 
-char ssid[] = "Samsung Galaxy Note Edge 8717"; //  your network SSID (name)
-char pass[] = "cakecake";    // your network password (use for WPA, or use as key for WEP)
+/*Brians Hotspot*/
+//char ssid[] = "Samsung Galaxy Note Edge 8717"; //  your network SSID (name)
+//char pass[] = "cakecake";    // your network password (use for WPA, or use as key for WEP)
+
+/*Cedric's Hotspot*/
+char ssid[] = "HTC One_M8_BC20"; //  your network SSID (name)
+char pass[] = "ClapOn88";
+
 int keyIndex = 0;            // your network key Index number (needed only for WEP)
 int z = 0;
 
 int status = WL_IDLE_STATUS;
 // if you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
-IPAddress server(192,168,43,209);  // numeric IP for Google (no DNS)
+IPAddress server(192,168,1,164);  // numeric IP for Google (no DNS)
 //char server[] = "www.google.com";    // name address for Google (using DNS)
 
 // Initialize the Ethernet client library

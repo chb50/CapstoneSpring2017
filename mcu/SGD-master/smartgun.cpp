@@ -12,10 +12,12 @@ SGD::SGD(EDB_Write_Handler *w, EDB_Read_Handler *r) {
 	srand(time(NULL));
 	//every smart gun device starts with "SGD:"
 	sgdId[0] = 'S'; sgdId[1] = 'G'; sgdId[2] = 'D'; sgdId[3] = ':';
-	for(int i = 4; i < 16; ++i) {
+	for(int i = 4; i < 15; ++i) {
 		int randNum = rand() % 26;
 		sgdId[i] = 'A' + randNum; //incriment ascii by "randNum" to get random capital letter
 	}
+
+	sgdId[15] = '\0';
 
 	//initialize database
 	db = new EDB(w,r);
@@ -63,6 +65,10 @@ char* SGD::getDBData(unsigned long recno, EDB_Rec rec) {
   }
 
   return buff;
+}
+
+char* SGD::getSgdId() {
+	return sgdId;
 }
 
 /* Private Functions */

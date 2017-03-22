@@ -45,6 +45,7 @@ class SGD {
 		void setFlags(SGD_Status); //set flags using bitwise OR
 		void resetFlags(SGD_Status); //reset flags using bitwise AND
 		char* SGD::getDBData(unsigned long recno, EDB_Rec rec); //package database entry to send over wifis
+		char* getSgdId();
 
 	private:
 		/* the status flag from left to right is as follows:
