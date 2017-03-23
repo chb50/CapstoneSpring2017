@@ -7,7 +7,7 @@ import sys
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
 # universal name
-host = '';                       
+host = '0.0.0.0';                       
 z = -1
 port = 9999                                           
 
