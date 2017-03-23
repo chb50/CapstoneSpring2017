@@ -5,6 +5,7 @@ def main():
 
 	mylist = string.split("\n");
 
+	print string
 	print mylist
 
 

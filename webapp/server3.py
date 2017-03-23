@@ -2,6 +2,7 @@
 import socket                                         
 import time
 import sys
+import datetime
 
 # create a socket object
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
@@ -9,7 +10,7 @@ serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # universal name
 host = '0.0.0.0';                       
 z = -1
-port = 9999                                           
+port = 10000                                           
 
 # bind to the port
 serversocket.bind((host, port))                                  
@@ -20,22 +21,24 @@ serversocket.listen(5)
 data = ""
 while True: #accpeting loop
     # establish a connection
-	print("loop around")
+	print("Waiting for connection...")
 	clientsocket,addr = serversocket.accept()
 	print("Got a connection from %s" % str(addr))
+	first = datetime.datetime.now()
 	while True: #reading loop
+		now = datetime.datetime.now()
+		if( (now.second - first.second) >= 10):
+			break
 		data += clientsocket.recv(1024)#read once
-		z = data.find("cedric") #detect starting token
+		z = data.find("SGD:") #detect starting token
 		if z == -1:
 			print("NO STARTING KEY FOUND")
 			break
 		data +=clientsocket.recv(1024)
-		r =data.find("vineet")#detect ending token
-		if r!= -1:
-			print("ending key found halting now")
-			clientsocket.send("halting reading process")
+		r = data.find("\r\n\r\n")#detect ending token
+		if r != -1:#if ending token is detected
 			break
-	print("THE DATA FROM THE ARDUNIO IS %s" % data.decode('ascii'))
-	clientsocket.close();
-	break #remove for infite loop
+	print("-----------Arduino Data-----------\n%s" % data.decode('ascii'))
+
+clientsocket.close();
 
