@@ -67,6 +67,8 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
+  Serial.print("Free Ram: ");
+  Serial.println(freemem());
 
   // check for the presence of the shield:
   if (WiFi.status() == WL_NO_SHIELD) {
@@ -74,6 +76,9 @@ void setup() {
     // don't continue:
     while (true);
   }
+
+  Serial.print("Free Ram: ");
+  Serial.println(freemem());
 
   // attempt to connect to WiFi network:
   while (status != WL_CONNECTED) {
@@ -149,6 +154,19 @@ void printWiFiStatus() {
 }
 
 
+/*for debugging*/
 
+// this function will return the number of bytes currently free in RAM      
+extern int  __bss_end; 
+extern int  *__brkval; 
+int freemem()
+{ 
+int free_memory; 
+if((int)__brkval == 0) 
+   free_memory = ((int)&free_memory) - ((int)&__bss_end); 
+else 
+   free_memory = ((int)&free_memory) - ((int)__brkval); 
+return free_memory; 
+}
 
 
