@@ -39,6 +39,7 @@ while True: #accpeting loop
 		if r != -1:#if ending token is detected
 			break
 	print("-----------Arduino Data-----------\n%s" % data.decode('ascii'))
+	data = ""
 
 clientsocket.close();
 
