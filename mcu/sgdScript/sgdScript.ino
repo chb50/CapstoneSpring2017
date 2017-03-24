@@ -32,7 +32,8 @@
 #define MEGA_CS 44
 #define MEGA_IRQ 21
 #define MEGA_RST 46
-#define PORT 9999
+#define MEGA_EN 41
+#define PORT 10000
 
 struct entry {
   //800 bytes for 10 entries
@@ -118,6 +119,10 @@ void setup(void) {
     Serial.println("Database reset");
   }
   Serial.println("DONE");
+
+  /*WIFI SETUP*/
+  WiFi.setPins(MEGA_CS,MEGA_IRQ,MEGA_RST);
+
   
   nfc.begin();
 
@@ -127,9 +132,7 @@ void setup(void) {
     Serial.print("Didn't find PN53x board");
     while (1); // halt
   }
-
-  /*WIFI SETUP*/
-  WiFi.setPins(MEGA_CS,MEGA_IRQ,MEGA_RST);
+  Serial.println("TEST 1");
   
   // Got ok data, print it out!
   Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX); 
@@ -147,9 +150,11 @@ void setup(void) {
   //for use with Arduino Mega 2560
   pinMode(FIRE_BUTTON, OUTPUT); //LED response to button and NFC tag
   pinMode(MODE, INPUT); //LED for indicating mode of operation
+  pinMode(MEGA_EN, OUTPUT);
   pinMode(53, OUTPUT);
 
   digitalWrite(FIRE_BUTTON, LOW); //by default, fire button is not active
+  digitalWrite(MEGA_EN, LOW); //only enable wifi if wifi swich is active
   
 }
 
@@ -167,16 +172,6 @@ void loop(void) {
 
   if(digitalRead(MODE) == LOW) { //then we are not in wifi mode
     Serial.println("FIRING MODE ACTIVE");
-    
-    //add nfc tag to database
-    if (recordId < ENTRY_COUNT) {
-      appendEntry(recordId, nameGen(recordId), uid);
-      Serial.println((smartGun.db)->count());
-      recordId++;
-     }
-    dbCount(); 
-    dbPrint();
-    Serial.println("DONE");
         
     if (success) {
       // Display some basic information about the card
@@ -188,6 +183,13 @@ void loop(void) {
       
       if (uidLength == 7)
       {
+        if (recordId < ENTRY_COUNT) {
+          appendEntry(recordId, nameGen(recordId), uid);
+          Serial.println((smartGun.db)->count());
+          recordId++;
+         }
+        dbCount(); 
+        dbPrint();
         //search db for tag here
         tagSearch(uid);
         //ready gun to fire if authorization has been approved
@@ -247,16 +249,34 @@ void loop(void) {
         
     }
   } else {/*TODO: need to update flags for smart gun object based on if wifi is established*/
+      /*WHAT I HAVE DONE TO FIX THIS DAMN BUG
+       * Tested if I am running out of ram, im not (5875)
+       * tested if wifi could run before nfc, runs just fine in that case
+       * Tested if theres an issue with power consumption, got same results
+       * 
+       * should try: matching wifi firmware (currently on 19.5.2, but im on 19.4.4) (UPDATE, 19.5.2 only exists on the mkr board)
+       */
+
+      digitalWrite(MEGA_EN, HIGH);
       
       Serial.println("WIFI MODE ACTIVE");
+      //add nfc tag to database
+      if (recordId < ENTRY_COUNT) {
+        appendEntry(recordId, nameGen(recordId), uid);
+        Serial.println((smartGun.db)->count());
+        recordId++;
+       }
+      dbCount(); 
+      dbPrint();
+      Serial.println("DONE");
 
       // check for the presence of the shield:
       if (WiFi.status() == WL_NO_SHIELD) {
-        //Serial.println("WiFi shield not present");
+        Serial.println("WiFi shield not present");
         // don't continue:
         while (true);
       }
-      Serial.println("TEST 1");
+      Serial.println("Test");
     
       // attempt to connect to WiFi network:
       while (status != WL_CONNECTED) {
@@ -274,26 +294,8 @@ void loop(void) {
     
       Serial.println("\nStarting connection to server...");
       // if you get a connection, report back via serial:
-      z = client.connect(server,9999);
-      Serial.println("our result from connect is");
-      unsigned int nick = 10;
-      char nah = 'A';
-      Serial.println(z);
-      if (z) {
-        Serial.println("connected to server");
-        // Make a HTTP request:
-        client.println("cedric");
-        client.println("GET /search?q=arduino HTTP/1.1");
-        client.println("Host: www.google.com");
-        client.println("Connection: close");
-        client.println("n");
-        client.println("CLEARLY");
-        client.println("/n");
-        client.println(nick);
-        client.println(nah);
-        client.println("vineet");
-      }
-  
+      
+      sendDb(); //send the database info to the web app
   
       // if there are incoming bytes available
       // from the server, read them and print them:
@@ -308,9 +310,11 @@ void loop(void) {
         Serial.println("disconnecting from server.");
         client.stop();
       
-    }
-    
+      }
 
+    digitalWrite(MEGA_EN, LOW);
+
+    Serial.flush();
   }
 }
 
@@ -393,6 +397,40 @@ void tagSearch(uint8_t* uid) {
   smartGun.resetFlags(AUTH); //remove authorization
 }
 
+
+void sendDb() {
+  z = client.connect(server,PORT);
+  Serial.println("our result from connect is");
+  unsigned int nick = 10;
+  char nah = 'A';
+  Serial.println(z);
+  if (z) {
+    Serial.println("connected to server");
+    client.println(smartGun.getSgdId());
+
+    for(int i = 1; i <= (smartGun.db)->count(); i++) {
+      EDB_Status result = (smartGun.db)->readRec(i, EDB_REC entry);
+      if (result == EDB_OK){
+        client.println(entry.id);
+        client.println(entry.userName);
+        for(int j = 0; j < 7; ++j) {
+          client.print(entry.nfcTag[j]);
+          if(j != 6) client.print(":");
+        }
+
+        client.println("\r\n\r\n"); //parsing token
+      } else {
+        Serial.println("failed to recieve db entry");
+        return;
+      }
+    }
+    
+    //client.println("\r\n\r\n"); //ending token
+  } else {
+    Serial.println("error in client connection");
+  }
+}
+
 /*WIFI HELPER FUNCTION*/
 void printWiFiStatus() {
   // print the SSID of the network you're attached to:
@@ -452,4 +490,19 @@ char* nameGen(int id) {
 
   Serial.println(nameSim);
   return nameSim;
+}
+
+/*for debugging*/
+
+// this function will return the number of bytes currently free in RAM      
+extern int  __bss_end; 
+extern int  *__brkval; 
+int freemem()
+{ 
+int free_memory; 
+if((int)__brkval == 0) 
+   free_memory = ((int)&free_memory) - ((int)&__bss_end); 
+else 
+   free_memory = ((int)&free_memory) - ((int)__brkval); 
+return free_memory; 
 }
