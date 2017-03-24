@@ -21,6 +21,7 @@ serversocket.listen(5)
 data = ""
 i = 0
 table = []
+
 while True: #accpeting loop
     # establish a connection
 	print("Waiting for connection...")
