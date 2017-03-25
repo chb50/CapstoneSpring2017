@@ -5,9 +5,9 @@ import socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
 # get local machine name
-host = "192.168.1.31" #vineets machine                           
+host = "localhost" #vineets machine                           
 
-port = 9999
+port = 10000
 
 # connection to hostname on the port.
 s.connect((host, port))                               
@@ -17,4 +17,4 @@ tm = s.recv(1024)
 
 s.close()
 
-print("The time got from the server is %s" % tm.decode('ascii'))
+print("The name's %s" % tm.decode('ascii'))

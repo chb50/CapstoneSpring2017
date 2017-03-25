@@ -16,24 +16,18 @@ app = Flask(__name__)
 #app.config['MYSQL_DB'] = 'testmcu'
 #mysql.init_app(app)
 
-# @app.route("/testconnection")
-
-
 
 @app.route("/")
 def main():
 
-	#results = connection()
 	results = connection()
+	
 	table = [] 
-	#
-	#some network code that gives us an entry 
-	#
 
 	for i in range(0,len(results)):
 		table.append(results[i])
 
-	for i in range(len(results)-1, 10):
+	for i in range(len(results)-1, 11):
 		table.append(" ")
 	print table
 
