@@ -6,10 +6,10 @@
 <!-- <script type="text/javascript" src="js/jquery.min.js"></script> -->
 <script>
 
-var outputText = ""; 
 //var initialLength = '{{length}}';
 
 function appendText() {
+	var outputText = ""; 
 	var maxUsers = 10;
 
 	// document.getElementById("table").innerHTML = 5+6;
@@ -46,12 +46,12 @@ function appendText() {
 		outputText += "<br>";
 	}	
 
-	refreshDisplay();
+	refreshDisplay(outputText);
 
 }
 
-function refreshDisplay() {
-
+function refreshDisplay(var outputText) {
+	document.ready();
     document.getElementById('table').innerHTML = outputText;
 }
 
