@@ -20,8 +20,9 @@
 #include <SPI.h>
 #include <WiFi101.h>
 #include <Adafruit_PN532.h>
+#include <avr/wdt.h>
 
-#define TABLE_SIZE 1024
+#define TABLE_SIZE 4096 //this size is for the mega
 #define ENTRY_COUNT 10
 #define DB_START 0 //the adress in which the database starts
 
@@ -32,8 +33,8 @@
 #define MEGA_CS 44
 #define MEGA_IRQ 21
 #define MEGA_RST 46
-#define MEGA_EN 41
-#define PORT 10000
+#define MEGA_WAKE 41
+#define PORT 10001
 
 struct entry {
   //800 bytes for 10 entries
@@ -76,8 +77,6 @@ Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
    #define Serial SerialUSB
 #endif
 
-uint8_t recordId = 1;
-
 /*Wifi Stuff*/
 char ssid[] = "HTC One_M8_BC20"; //  your network SSID (name)
 char pass[] = "ClapOn88";
@@ -108,15 +107,16 @@ void setup(void) {
   Serial.println(smartGun.getSgdId());
 
   randomSeed(analogRead(0));
-  
+  //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
+  //deleteAll(); //for testing
+  //(smartGun.db)->create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
   // create table at with starting address 0
   if((smartGun.db)->open(DB_START) != EDB_OK) { 
     Serial.println("Database does not exist on this device");
     Serial.println("Creating database");
-    (smartGun.db)->create(DB_START, TABLE_SIZE, sizeof(entry));
+    (smartGun.db)->create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry));
   } else {
-    deleteAll();
-    Serial.println("Database reset");
+    Serial.println("Using Stored Database");
   }
   Serial.println("DONE");
 
@@ -143,18 +143,20 @@ void setup(void) {
   nfc.SAMConfig();
   
   /*SMARTGUN SETUP*/
+  smartGun.setFlags(AWAKE); //for now, assume that the device is owned by the user and that it is awake on startup
 
-  smartGun.setFlags(REG | AWAKE); //for now, assume that the device is owned by the user and that it is awake on startup
+  /*WATCHDOG SETUP*/
+  wdt_disable(); //always good to disable it, if it was left 'on' or you need init time
 
   /*DEMO SETUP STUFF*/
   //for use with Arduino Mega 2560
   pinMode(FIRE_BUTTON, OUTPUT); //LED response to button and NFC tag
   pinMode(MODE, INPUT); //LED for indicating mode of operation
-  pinMode(MEGA_EN, OUTPUT);
+  pinMode(MEGA_WAKE, OUTPUT);
   pinMode(53, OUTPUT);
 
   digitalWrite(FIRE_BUTTON, LOW); //by default, fire button is not active
-  digitalWrite(MEGA_EN, LOW); //only enable wifi if wifi swich is active
+  digitalWrite(MEGA_WAKE, LOW); //only enable wifi if wifi swich is active
   
 }
 
@@ -163,12 +165,14 @@ void loop(void) {
   uint8_t success;
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+  smartGun.setFlags(REG);
     
   // Wait for an NTAG203 card.  When one is found 'uid' will be populated with
   // the UID, and uidLength will indicate the size of the UUID (normally 7)
 
   Serial.println("Waiting for an ISO14443A Card ...");
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+  Serial.println("TEST");
 
   if(digitalRead(MODE) == LOW) { //then we are not in wifi mode
     Serial.println("FIRING MODE ACTIVE");
@@ -183,14 +187,8 @@ void loop(void) {
       
       if (uidLength == 7)
       {
-        if (recordId < ENTRY_COUNT) {
-          appendEntry(recordId, nameGen(recordId), uid);
-          Serial.println((smartGun.db)->count());
-          recordId++;
-         }
-        dbCount(); 
-        dbPrint();
         //search db for tag here
+        dbPrint();
         tagSearch(uid);
         //ready gun to fire if authorization has been approved
         smartGun.getFlags() & AUTH ? digitalWrite(FIRE_BUTTON, HIGH): digitalWrite(FIRE_BUTTON, LOW);
@@ -249,22 +247,14 @@ void loop(void) {
         
     }
   } else {/*TODO: need to update flags for smart gun object based on if wifi is established*/
-      /*WHAT I HAVE DONE TO FIX THIS DAMN BUG
-       * Tested if I am running out of ram, im not (5875)
-       * tested if wifi could run before nfc, runs just fine in that case
-       * Tested if theres an issue with power consumption, got same results
-       * 
-       * should try: matching wifi firmware (currently on 19.5.2, but im on 19.4.4) (UPDATE, 19.5.2 only exists on the mkr board)
-       */
 
-      digitalWrite(MEGA_EN, HIGH);
+      digitalWrite(MEGA_WAKE, HIGH);
       
       Serial.println("WIFI MODE ACTIVE");
       //add nfc tag to database
-      if (recordId < ENTRY_COUNT) {
-        appendEntry(recordId, nameGen(recordId), uid);
+      if ((smartGun.db)->count() < ENTRY_COUNT) {
+        appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
         Serial.println((smartGun.db)->count());
-        recordId++;
        }
       dbCount(); 
       dbPrint();
@@ -312,9 +302,16 @@ void loop(void) {
       
       }
 
-    digitalWrite(MEGA_EN, LOW);
+    digitalWrite(MEGA_WAKE, LOW);
 
+    if ((smartGun.db)->count() >= ENTRY_COUNT) {
+      Serial.println("DB limit reached, resetting db");
+      deleteAll();
+    }
+    
     Serial.flush();
+    sysRestart(); //restart the system
+    
   }
 }
 
@@ -401,31 +398,31 @@ void tagSearch(uint8_t* uid) {
 void sendDb() {
   z = client.connect(server,PORT);
   Serial.println("our result from connect is");
-  unsigned int nick = 10;
-  char nah = 'A';
   Serial.println(z);
-  if (z) {
+  if (z) { //nfc craps out when we try to send information
     Serial.println("connected to server");
     client.println(smartGun.getSgdId());
 
     for(int i = 1; i <= (smartGun.db)->count(); i++) {
       EDB_Status result = (smartGun.db)->readRec(i, EDB_REC entry);
       if (result == EDB_OK){
-        client.println(entry.id);
-        client.println(entry.userName);
+        client.print(entry.id);
+        client.print(" ");
+        client.print(entry.userName);
+        client.print(" ");
         for(int j = 0; j < 7; ++j) {
           client.print(entry.nfcTag[j]);
           if(j != 6) client.print(":");
         }
 
-        client.println("\r\n\r\n"); //parsing token
+        client.print("\r\n"); //parsing token
       } else {
         Serial.println("failed to recieve db entry");
         return;
       }
     }
     
-    //client.println("\r\n\r\n"); //ending token
+    client.println("SGD:END"); //ending token
   } else {
     Serial.println("error in client connection");
   }
@@ -490,6 +487,25 @@ char* nameGen(int id) {
 
   Serial.println(nameSim);
   return nameSim;
+}
+
+//watchdog reset function
+void wdt_delay(unsigned long msec) {
+  wdt_reset();
+  
+  while(msec > 1000) {
+    wdt_reset();
+    delay(1000);
+    msec -= 1000;
+  }
+  delay(msec);
+  wdt_reset();
+}
+
+//forced restart function
+void sysRestart() {
+  wdt_enable(WDTO_1S); //endable wtd to 1s, and wait 1 sec for sys retart
+  delay(1001);
 }
 
 /*for debugging*/

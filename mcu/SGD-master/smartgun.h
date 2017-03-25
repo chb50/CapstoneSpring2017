@@ -44,8 +44,7 @@ class SGD {
 		uint8_t getFlags();
 		void setFlags(SGD_Status); //set flags using bitwise OR
 		void resetFlags(SGD_Status); //reset flags using bitwise AND
-		char* SGD::getDBData(unsigned long recno, EDB_Rec rec); //package database entry to send over wifis
-		char* getSgdId();
+		char* getSgdId(); //retrieve the sgdId
 
 	private:
 		/* the status flag from left to right is as follows:
@@ -57,7 +56,5 @@ class SGD {
 		*/
 		uint8_t statusFlags = 0x00;
 		char* sgdId; //id used in first time authentication, will deallocate the id once checked by webapp
-		void uint8ToChar(uint8_t num, char* buff); //converts from uint8_t to char*
-
     
 };
