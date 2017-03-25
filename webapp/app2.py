@@ -1,6 +1,9 @@
 from flask import Flask, render_template
 import os, sys, socket
 from flask_mysqldb import MySQL
+import socket                                         
+import time
+import datetime
 
 #In the database make the date and time a char of length 10
 
@@ -13,39 +16,15 @@ app = Flask(__name__)
 #app.config['MYSQL_DB'] = 'testmcu'
 #mysql.init_app(app)
 
-#HOST = 'localhost'
-#PORT = 15000
+# @app.route("/testconnection")
 
-@app.route("/testconnection")
-def connection():
-	sid = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	sid.bind((HOST, PORT))
-	sid.listen(1)
-	conn, addr = sid.accept()
 
-	print 'Connected by' , addr
-
-	while 1:
-		data = conn.recv(1024) #create a buffer of size
-		if not data: break #
-		conn.sendall(data)
-	conn.close()
-	return data;
 
 @app.route("/")
 def main():
-	#connect to database
-	#cur = mysql.connect.cursor()
-	
-	#execute the sql command
-	#sql = "SELECT * FROM TESTTABLE"
-	#cur.execute(sql)
 
-	r1 = ('fire');
-	r2 = ('fireguns');
-	results =[]
-	results.append(r1)
-	results.append(r2)
+	#results = connection()
+	results = connection()
 	table = [] 
 	#
 	#some network code that gives us an entry 
@@ -57,7 +36,56 @@ def main():
 	for i in range(len(results)-1, 10):
 		table.append(" ")
 	print table
+
 	return render_template("database.html", table=table, length=len(results))
+
+
+
+def connection():
+	print("Running connection")
+		# create a socket object
+	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+
+	# universal name
+	host = '0.0.0.0';                       
+	port = 10001                                       
+
+	# bind to the port
+	serversocket.bind((host, port))                                  
+
+	# queue up to 5 requests
+	serversocket.listen(5)                                           
+
+	data = ""
+	i = 0
+	table = []
+
+	while True: #accpeting loop
+	    # establish a connection
+		print("Waiting for connection...")
+		clientsocket,addr = serversocket.accept()
+		print("Got a connection from %s" % str(addr))
+		while True: #reading loop
+			data += clientsocket.recv(1024)#read once
+
+			if i == 0: #if it is the first read, check for correct starting token
+				z = data.find("SGD:") #detect starting token
+				if z == -1: #if no starting token found, break connection
+					print("NO STARTING KEY FOUND")
+					break
+
+			end = data.find("SGD:END") #if the final end token is detected, break
+			if end != -1:
+				clientsocket.close();
+				return table
+
+			r = data.find("\r\n")#detect ending line token
+			if r != -1:# if ending line token is detected
+				i = i+1 # increment index
+				table.append(data) # add the data to the table
+				data = "" # empty the data buffer
+	clientsocket.close();
+
 
 if __name__ == "__main__":
 	app.run(debug = True)
