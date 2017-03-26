@@ -5,7 +5,7 @@ import socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
 # get local machine name
-host = "localhost" #vineets machine                           
+host = "192.168.0.104" #vineets machine                           
 
 port = 10000
 
