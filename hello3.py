@@ -81,8 +81,9 @@ def login_required(f):
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
-	if request.method == 'POST':
+	if request.method == 'POST': #code to put smartgun code into database
 		regid = request.form.get('test')
+		print regid
 		if(regid == 'nopenopenope111'): #testing the check!  #add multiple trys
 			conn1 = mysql.connect()
 			cursor2 = conn1.cursor()
@@ -95,7 +96,7 @@ def home():
 	return render_template('index.html')  # render a template
     # return "Hello, World!"  # return a string
 
-@app.route('/welcome')
+@app.route('/welcome',methods = ['POST','GET']) #add post and get methods to make sure
 def welcome():
 
 	table = [] 
@@ -105,6 +106,9 @@ def welcome():
 	table.append(sgdPacket("bob","qwe123qwe123qwe"))
 	table.append(sgdPacket("jillard","345ert345ert345"))
 	table.append(sgdPacket("dickling","uio789uio789uio"))
+	test = 1
+	nameid = request.form.get("name2")
+	print nameid
 
 	for i in range(len(table)-1,10):
 		table.append(sgdPacket(None, None))
@@ -116,7 +120,7 @@ def welcome():
 	# for i in range(len(results)-1, 10):
 	# 	table.append(" ")
 
-	return render_template("database.html", table=table, length=len(table))
+	return render_template("database3.html", table=table, length=len(table),test = test)
 
 # route for handling the login page logic
 @app.route('/login', methods=['GET', 'POST'])
