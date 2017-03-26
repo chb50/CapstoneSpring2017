@@ -34,7 +34,7 @@
 #define MEGA_IRQ 21
 #define MEGA_RST 46
 #define MEGA_WAKE 41
-#define PORT 10001
+#define PORT 10000
 
 struct entry {
   //800 bytes for 10 entries
@@ -108,8 +108,8 @@ void setup(void) {
 
   randomSeed(analogRead(0));
   //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
-  //deleteAll(); //for testing
-  //(smartGun.db)->create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
+//  deleteAll(); //for testing
+//  (smartGun.db)->create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
   // create table at with starting address 0
   if((smartGun.db)->open(DB_START) != EDB_OK) { 
     Serial.println("Database does not exist on this device");
@@ -161,7 +161,7 @@ void setup(void) {
 }
 
 void loop(void) {
-  
+  char newUsrNm[16];
   uint8_t success;
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
@@ -172,7 +172,6 @@ void loop(void) {
 
   Serial.println("Waiting for an ISO14443A Card ...");
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
-  Serial.println("TEST");
 
   if(digitalRead(MODE) == LOW) { //then we are not in wifi mode
     Serial.println("FIRING MODE ACTIVE");
@@ -236,28 +235,23 @@ void loop(void) {
         Serial.println("This doesn't seem to be an NTAG203 tag (UUID length != 7 bytes)!");
       }
       
-      // Wait a bit before trying again
-  //    Serial.println("\n\nSend a character to scan another tag!");
-  //    Serial.flush();
-  //    while (!Serial.available()); //what causes the script to pause for manual input, will need to make this automatic
-  //    while (Serial.available()) {
-  //    Serial.read();
-  //    }
       Serial.flush(); 
         
     }
   } else {/*TODO: need to update flags for smart gun object based on if wifi is established*/
-
       digitalWrite(MEGA_WAKE, HIGH);
-      
+
       Serial.println("WIFI MODE ACTIVE");
-      //add nfc tag to database
-      if ((smartGun.db)->count() < ENTRY_COUNT) {
-        appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
-        Serial.println((smartGun.db)->count());
-       }
-      dbCount(); 
-      dbPrint();
+      Serial.println("DELETING DATABASE for testing adding tag req");
+      deleteAll();
+      
+//      //add nfc tag to database (for testing)
+//      if ((smartGun.db)->count() < ENTRY_COUNT) {
+//        appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
+//        Serial.println((smartGun.db)->count());
+//       }
+//      dbCount(); 
+//      dbPrint();
       Serial.println("DONE");
 
       // check for the presence of the shield:
@@ -266,7 +260,6 @@ void loop(void) {
         // don't continue:
         while (true);
       }
-      Serial.println("Test");
     
       // attempt to connect to WiFi network:
       while (status != WL_CONNECTED) {
@@ -274,7 +267,6 @@ void loop(void) {
         Serial.println(ssid);
         // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
         status = WiFi.begin(ssid, pass);
-        Serial.println("Test 2");
     
         // wait 10 seconds for connection:
         delay(10000);
@@ -285,13 +277,19 @@ void loop(void) {
       Serial.println("\nStarting connection to server...");
       // if you get a connection, report back via serial:
       
-      sendDb(); //send the database info to the web app
-  
-      // if there are incoming bytes available
-      // from the server, read them and print them:
-      while (client.available()) {
-        char c = client.read();
-        Serial.write(c);
+      //sendDb(); //send the database info to the web app
+
+      //TODO: database not retaining username on subsequent calls when we try to get name from web app
+      if(tagSearch(uid) == 0) { //if tag does not exist in db
+         Serial.println("New tag found! req to add from web app");
+         if(sendNewTagReq(newUsrNm) == 1) { //if usrnm was given by webapp
+            if ((smartGun.db)->count() < ENTRY_COUNT) {
+              appendEntry((smartGun.db)->count()+1, newUsrNm, uid);
+              Serial.println((smartGun.db)->count());
+            } else {
+              Serial.println("NOT ENOUGH SPACE IN DATABASE");
+            }
+         }
       }
       
       // if the server's disconnected, stop the client:
@@ -375,7 +373,7 @@ void deleteEntry(int recno)
   (smartGun.db)->deleteRec(recno);
 }
 
-void tagSearch(uint8_t* uid) {
+uint8_t tagSearch(uint8_t* uid) {
   for (int recno = 1; recno <= (smartGun.db)->count(); recno++)
   {
     EDB_Status result = (smartGun.db)->readRec(recno, EDB_REC entry);
@@ -384,7 +382,7 @@ void tagSearch(uint8_t* uid) {
       if (entry.nfcTag == uid) {
         Serial.println("ID success!");
         smartGun.setFlags(AUTH); //set authorization
-        return;
+        return 1;
       }
     }
     else printError(result);
@@ -392,6 +390,7 @@ void tagSearch(uint8_t* uid) {
 
   Serial.println("ID not found!");
   smartGun.resetFlags(AUTH); //remove authorization
+  return 0;
 }
 
 
@@ -426,6 +425,37 @@ void sendDb() {
   } else {
     Serial.println("error in client connection");
   }
+}
+
+uint8_t sendNewTagReq(char* newUsrNm) {
+  int i = 0;
+  z = client.connect(server,PORT);
+  Serial.println("our result from connect is");
+  Serial.println(z);
+  if(z) {
+    Serial.println("connected to server");
+    client.print("NEW");
+  } else {
+    Serial.println("error in client connection");
+    return 0;
+  }
+  //will need to read info given from user
+  // if there are incoming bytes available
+  // from the server, read them and print them:
+  Serial.println("the user name is...");
+  while(!client.available()); //wait for info to be availible
+  while (client.available()) {
+    newUsrNm[i] = client.read();
+    if(newUsrNm[i] == '\0') {
+      return 1;
+    }
+    i++;
+    Serial.print(newUsrNm[i]);
+    if (i >= 15) {
+      newUsrNm[15] = '\0';
+    }
+  }
+  return 1;
 }
 
 /*WIFI HELPER FUNCTION*/
