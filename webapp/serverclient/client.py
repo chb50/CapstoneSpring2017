@@ -17,4 +17,4 @@ tm = s.recv(1024)
 
 s.close()
 
-print("The name's %s" % tm.decode('ascii'))
+print("The name's %s" % tm)

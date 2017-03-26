@@ -17,19 +17,18 @@ data = ""
 
 while True: #accepting loop
 
-	print("Searching for new tags...")
+	print("Searching for Connection...")
 	clientsocket,addr = serversocket.accept()
 	print("Got a connection from %s" % str(addr))
 
-	#data += clientsocket.recv(1024)#we only need to read once
-
+	#data += clientsocket.recv(1024) #we only need to read once
 	#end = data.find("NEW") #if the final end token is detected, break
+
 	end = 0
 	if end != -1:
-		print("New tag found!")
 		print("Writing to Socket...")
-		name = "Dickling"
-		w = clientsocket.send(name.encode("ascii"))
+		name = "BOB"
+		w = clientsocket.send(name)
 		if(w != -1):
 			print("Write Successful")
 		else:
