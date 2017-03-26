@@ -1,4 +1,10 @@
 # server.py 
+
+# IMPORTANT NOTE
+# Make sure to allow access through firewall on a specific port
+# when running this server on a windows machine
+
+
 import socket                                         
 import time
 
