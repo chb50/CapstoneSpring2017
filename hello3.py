@@ -3,6 +3,7 @@ from flask import Flask, render_template, redirect, url_for, request, session, f
 from functools import wraps
 import MySQLdb
 from flask.ext.hashing import Hashing
+import socket
 
 
 from flaskext.mysql import MySQL
@@ -108,7 +109,6 @@ def welcome():
 	if newRequest: #if it is a new request
 		writeBack(nameid, clientsocket)
 
-
 	print nameid
 
 	return render_template("database3.html",test = newRequest)
@@ -120,7 +120,7 @@ def openSocket():
 
 	# universal name
 	host = '0.0.0.0';                       
-	port = 10000                                   
+	port = 10001                                  
 
 	# bind to the port
 	serversocket.bind((host, port))                                  
@@ -148,7 +148,7 @@ def readRequest(serversocket):
 		serversocket.close()
 		return False, 0
 
-def writeBack(clientSocket, nameData):
+def writeBack(clientsocket, nameData):
 	print("Write Back Function")
 	print("Writing to Socket...")
 	err = clientsocket.send(nameData)
