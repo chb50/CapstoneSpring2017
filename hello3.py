@@ -100,28 +100,60 @@ def home():
 def welcome():
 
 	table = [] 
-
-
-
-	table.append(sgdPacket("bob","qwe123qwe123qwe"))
-	table.append(sgdPacket("jillard","345ert345ert345"))
-	table.append(sgdPacket("dickling","uio789uio789uio"))
 	test = 1
 	nameid = request.form.get("name2")
 	print nameid
 
+	check = runConnection(nameid)
+
 	for i in range(len(table)-1,10):
 		table.append(sgdPacket(None, None))
 
+	return render_template("database3.html",test = test, check=check)
 
-	# for i in range(0,len(results)):
-	# 	table.append(results[i])
 
-	# for i in range(len(results)-1, 10):
-	# 	table.append(" ")
+def runConnection(nameid):
+	print("Running Connection")
+		# create a socket object
+	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
-	return render_template("database3.html", table=table, length=len(table),test = test)
+	# universal name
+	host = '0.0.0.0';                       
+	port = 10000                                   
 
+	# bind to the port
+	serversocket.bind((host, port))                                  
+
+	# queue up to 5 requests
+	serversocket.listen(5)                                           
+
+	data = ""
+
+	while True: #accepting loop
+
+		print("Searching for new tags...")
+		clientsocket,addr = serversocket.accept()
+		print("Got a connection from %s" % str(addr))
+
+		data += clientsocket.recv(1024)#we only need to read once
+
+		end = data.find("NEW") #if the final end token is detected, break
+		if end != -1:
+			print("New tag found!")
+			# We need to pop up to be here
+			print("Writing to Socket...")
+			name = nameid #make sure to append the termination character
+			w = clientsocket.send(name)
+			if(w != -1):
+				print("Write Successful")
+			clientsocket.close();
+			return True
+		else:
+			print("No new tag found")
+			clientsocket.close(); 
+			return False
+
+	
 # route for handling the login page logic
 @app.route('/login', methods=['GET', 'POST'])
 def login():

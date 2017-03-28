@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- <script src="jquery.min.js"></script> -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<!-- <script type="text/javascript" src="js/jquery.min.js"></script> -->
+<script>
+
+function doom()
+{
+	var greeting = "DEFAULT";
+	var x;
+	document.getElementById('hi').innerHTML = greeting;
+	document.getElementById("demo").innerHTML = "NOPE!"
+	if({{test}} == 1){
+	document.getElementById("demo").innerHTML = "new tag";
+	x = window.confirm("ADD TAG?");
+	}
+	else{
+	document.getElementById("demo").innerHTML = "Nold";
+	}
+
+
+	if(x == true )
+	{
+	var name1 = window.prompt("Please enter name you want in database");
+	}
+
+	if(name1 != null)
+	{
+		document.getElementById("outname").innerHTML = "we got it";
+		$(document).ready(function(){document.append("name2");});
+		$.post("/welcome",{"name2":name1})
+
+	}
+
+}
+
+if({{check}}){
+	window.onload = doom;
+}
+
+
+</script>
+</head>
+<body>
+
+<p>Register New Tag</p>
+<p id = "demo"></p>
+<p id = "hi"></p>
+<p id = "outname"></p>
+
+
+
+
+</body>
+</html>

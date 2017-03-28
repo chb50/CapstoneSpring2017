@@ -44,19 +44,18 @@ def runConnection():
 		if end != -1:
 			print("New tag found!")
 			print("Writing to Socket...")
-			name = "Dickling\0" #make sure to append the termination character
-			w = clientsocket.send(name.encode('ascii'))
+			name = "Richard" #make sure to append the termination character
+			w = clientsocket.send(name)
 			if(w != -1):
 				print("Write Successful")
-			else:
-				print("No Success")
+			clientsocket.close();
 			return True
 		else:
-			print("No new tag found") 
+			print("No new tag found")
+			clientsocket.close(); 
 			return False
-		clientsocket.close();
 
-
+	
 
 if __name__ == "__main__":
 	app.run(debug = True)
