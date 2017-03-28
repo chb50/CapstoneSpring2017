@@ -99,21 +99,22 @@ def home():
 @app.route('/welcome',methods = ['POST','GET']) #add post and get methods to make sure
 def welcome():
 
-	table = [] 
+	serversocket = openSocket()
+	newRequest, clientsocket = readRequest(serversocket)
+
 	test = 1
 	nameid = request.form.get("name2")
+
+	if newRequest: #if it is a new request
+		writeBack(nameid, clientsocket)
+
+
 	print nameid
 
-	check = runConnection(nameid)
+	return render_template("database3.html",test = test)
 
-	for i in range(len(table)-1,10):
-		table.append(sgdPacket(None, None))
-
-	return render_template("database3.html",test = test, check=check)
-
-
-def runConnection(nameid):
-	print("Running Connection")
+def openSocket():
+	print("Open Socket Function")
 		# create a socket object
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
@@ -125,33 +126,38 @@ def runConnection(nameid):
 	serversocket.bind((host, port))                                  
 
 	# queue up to 5 requests
-	serversocket.listen(5)                                           
+	serversocket.listen(5)
 
+	return serversocket
+
+def readRequest(serversocket):
+	print("Read request function")
 	data = ""
 
-	while True: #accepting loop
+	print("Searching for new tags...")
+	clientsocket,addr = serversocket.accept()
+	print("Got a connection from %s" % str(addr))
 
-		print("Searching for new tags...")
-		clientsocket,addr = serversocket.accept()
-		print("Got a connection from %s" % str(addr))
+	data += clientsocket.recv(1024)#we only need to read once
 
-		data += clientsocket.recv(1024)#we only need to read once
+	end = data.find("NEW")
+	if end != -1:
+		return True, clientsocket
+	else:
+		clientsocket.close()
+		serversocket.close()
+		return False, 0
 
-		end = data.find("NEW") #if the final end token is detected, break
-		if end != -1:
-			print("New tag found!")
-			# We need to pop up to be here
-			print("Writing to Socket...")
-			name = nameid #make sure to append the termination character
-			w = clientsocket.send(name)
-			if(w != -1):
-				print("Write Successful")
-			clientsocket.close();
-			return True
-		else:
-			print("No new tag found")
-			clientsocket.close(); 
-			return False
+def writeBack(clientSocket, nameData):
+	print("Write Back Function")
+	print("Writing to Socket...")
+	err = clientsocket.send(nameData)
+	if(err != -1):
+		print("Write Successful")
+		clientsocket.close()
+	else:
+		print("Writing Error")
+		clientsocket.close()
 
 	
 # route for handling the login page logic
