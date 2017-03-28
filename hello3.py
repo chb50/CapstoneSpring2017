@@ -111,7 +111,7 @@ def welcome():
 
 	print nameid
 
-	return render_template("database3.html",test = test)
+	return render_template("database3.html",test = newRequest)
 
 def openSocket():
 	print("Open Socket Function")
