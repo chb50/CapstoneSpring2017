@@ -1,3 +1,9 @@
+/* DEBUGGING NOTES
+ *  
+ *  make sure to not use too many serial print statements, as they take space in ram and may lead to unexpected results in code
+ */
+
+
 // NTAG2x3 cards have 39*4 bytes of user pages (156 user bytes),
 // starting at page 4 ... larger cards just add pages to the end of
 // this range:
@@ -78,8 +84,11 @@ Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 #endif
 
 /*Wifi Stuff*/
-char ssid[] = "HTC One_M8_BC20"; //  your network SSID (name)
-char pass[] = "ClapOn88";
+//char ssid[] = "HTC One_M8_BC20"; //  your network SSID (name)
+//char pass[] = "ClapOn88";
+
+char ssid[] = "CB6SC"; //  your network SSID (name)
+char pass[] = "YWXYGTR36XGSJBY6";
 
 int keyIndex = 0;            // your network key Index number (needed only for WEP)
 int z = 0;
@@ -87,7 +96,7 @@ int z = 0;
 int status = WL_IDLE_STATUS;
 // if you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
-IPAddress server(192,168,1,31);  // numeric IP for Google (no DNS)
+IPAddress server(192,168,1,5);  // numeric IP for Google (no DNS)
 //char server[] = "www.google.com";    // name address for Google (using DNS)
 
 // Initialize the Ethernet client library
@@ -100,11 +109,8 @@ void setup(void) {
   while (!Serial);
   Serial.println("Hello!");
 
-  Serial.println("Extended Database Library + Arduino Internal EEPROM Demo");
-  Serial.println();
-
-  Serial.print("Smart gun ID: ");
-  Serial.println(smartGun.getSgdId());
+//  Serial.print("Smart gun ID: ");
+//  Serial.println(smartGun.getSgdId());
 
   randomSeed(analogRead(0));
   //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
@@ -118,7 +124,6 @@ void setup(void) {
   } else {
     Serial.println("Using Stored Database");
   }
-  Serial.println("DONE");
 
   /*WIFI SETUP*/
   WiFi.setPins(MEGA_CS,MEGA_IRQ,MEGA_RST);
@@ -132,7 +137,6 @@ void setup(void) {
     Serial.print("Didn't find PN53x board");
     while (1); // halt
   }
-  Serial.println("TEST 1");
   
   // Got ok data, print it out!
   Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX); 
@@ -144,6 +148,8 @@ void setup(void) {
   
   /*SMARTGUN SETUP*/
   smartGun.setFlags(AWAKE); //for now, assume that the device is owned by the user and that it is awake on startup
+  smartGun.resetFlags(WIFI_CONN); //not connected to wifi yet
+  Serial.println(smartGun.getFlags(), BIN);
 
   /*WATCHDOG SETUP*/
   wdt_disable(); //always good to disable it, if it was left 'on' or you need init time
@@ -170,6 +176,12 @@ void loop(void) {
   // Wait for an NTAG203 card.  When one is found 'uid' will be populated with
   // the UID, and uidLength will indicate the size of the UUID (normally 7)
 
+  //NOTE: need this print to store and hold the username on the database
+  //WATCH OUT FOR THIS, it may give bugs if we try to add multiple tags
+  Serial.print("USERNAME TEST: ");
+  Serial.print(newUsrNm);
+  Serial.println();
+
   Serial.println("Waiting for an ISO14443A Card ...");
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
 
@@ -187,6 +199,12 @@ void loop(void) {
       if (uidLength == 7)
       {
         //search db for tag here
+//        //add nfc tag to database (for testing)
+//        if ((smartGun.db)->count() < ENTRY_COUNT) {
+//          appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
+//          Serial.println((smartGun.db)->count());
+//         }
+//        dbCount(); 
         dbPrint();
         tagSearch(uid);
         //ready gun to fire if authorization has been approved
@@ -238,7 +256,7 @@ void loop(void) {
       Serial.flush(); 
         
     }
-  } else {/*TODO: need to update flags for smart gun object based on if wifi is established*/
+  } else {
       digitalWrite(MEGA_WAKE, HIGH);
 
       Serial.println("WIFI MODE ACTIVE");
@@ -252,7 +270,6 @@ void loop(void) {
 //       }
 //      dbCount(); 
 //      dbPrint();
-      Serial.println("DONE");
 
       // check for the presence of the shield:
       if (WiFi.status() == WL_NO_SHIELD) {
@@ -272,20 +289,30 @@ void loop(void) {
         delay(10000);
       }
       Serial.println("Connected to wifi");
-      printWiFiStatus();
+      //printWiFiStatus();
     
       Serial.println("\nStarting connection to server...");
       // if you get a connection, report back via serial:
+
+      z = client.connect(server,PORT);
+      if(z) {
+        Serial.println("connected to server");
+        smartGun.setFlags(WIFI_CONN);
+      } else {
+        Serial.println("error in client connection");
+        return 0;
+      }
       
       //sendDb(); //send the database info to the web app
 
-      //TODO: database not retaining username on subsequent calls when we try to get name from web app
+      Serial.flush();
       if(tagSearch(uid) == 0) { //if tag does not exist in db
          Serial.println("New tag found! req to add from web app");
-         if(sendNewTagReq(newUsrNm) == 1) { //if usrnm was given by webapp
+         if(sendNewTagReq(newUsrNm) == 1) {
+            char* nameBuff = newUsrNm;
+         
             if ((smartGun.db)->count() < ENTRY_COUNT) {
               appendEntry((smartGun.db)->count()+1, newUsrNm, uid);
-              Serial.println((smartGun.db)->count());
             } else {
               Serial.println("NOT ENOUGH SPACE IN DATABASE");
             }
@@ -296,6 +323,7 @@ void loop(void) {
       if (!client.connected()) {
         Serial.println();
         Serial.println("disconnecting from server.");
+        smartGun.resetFlags(WIFI_CONN);
         client.stop();
       
       }
@@ -393,12 +421,9 @@ uint8_t tagSearch(uint8_t* uid) {
   return 0;
 }
 
-
+//TODO: need to retest this
 void sendDb() {
-  z = client.connect(server,PORT);
-  Serial.println("our result from connect is");
-  Serial.println(z);
-  if (z) { //nfc craps out when we try to send information
+  if (smartGun.getFlags() & WIFI_CONN) { //nfc craps out when we try to send information
     Serial.println("connected to server");
     client.println(smartGun.getSgdId());
 
@@ -428,34 +453,29 @@ void sendDb() {
 }
 
 uint8_t sendNewTagReq(char* newUsrNm) {
-  int i = 0;
-  z = client.connect(server,PORT);
-  Serial.println("our result from connect is");
-  Serial.println(z);
-  if(z) {
-    Serial.println("connected to server");
+  if(smartGun.getFlags() & WIFI_CONN) { //check to see if we connected to the webapp
+    int i = 0;
     client.print("NEW");
+    client.flush();
+    
+    //will need to read info given from user
+    // if there are incoming bytes available
+    // from the server, read them and print them:
+    Serial.println("Recieving username...");
+    while(!client.available());//TODO, add a wd timeout here; //wait for info to be availible
+    do {
+      newUsrNm[i] = client.read();
+      i++;
+      if (!client.available() or i == 15) {
+        newUsrNm[i] = '\0';
+      }
+    }while (client.available());
+    Serial.println("DONE");
+    return 1;
   } else {
-    Serial.println("error in client connection");
+    Serial.println("Smartgun not connected!");
     return 0;
   }
-  //will need to read info given from user
-  // if there are incoming bytes available
-  // from the server, read them and print them:
-  Serial.println("the user name is...");
-  while(!client.available()); //wait for info to be availible
-  while (client.available()) {
-    newUsrNm[i] = client.read();
-    if(newUsrNm[i] == '\0') {
-      return 1;
-    }
-    i++;
-    Serial.print(newUsrNm[i]);
-    if (i >= 15) {
-      newUsrNm[15] = '\0';
-    }
-  }
-  return 1;
 }
 
 /*WIFI HELPER FUNCTION*/

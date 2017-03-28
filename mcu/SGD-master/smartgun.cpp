@@ -39,7 +39,7 @@ void SGD::setFlags(SGD_Status status) {
 }
 
 void SGD::resetFlags(SGD_Status status) {
-	statusFlags = statusFlags & (!status); //removes inidcated flag while leaving other flags untouched (flips bits to 1 instead of flag, which is flipped to 0)
+	statusFlags = statusFlags & (0xFF ^ status); //removes inidcated flag while leaving other flags untouched (flips bits to 1 instead of flag, which is flipped to 0)
 	return;
 }
 
