@@ -103,13 +103,26 @@ def welcome():
 	serversocket = openSocket()
 	newRequest, clientsocket = readRequest(serversocket)
 
+	print clientsocket
+
 	test = 1
 	nameid = request.form.get("name2")
 
-	if newRequest: #if it is a new request
-		writeBack(nameid, clientsocket)
+	#test value for now
+	nameid = "TESTVALUE\0"
 
-	print nameid
+	if newRequest: #if it is a new request
+		print("Write Back Function")
+		print("Writing to Socket...")
+		print(clientsocket)
+		err = clientsocket.send(nameid)
+		if(err != -1):
+			print("Write Successful")
+			clientsocket.close()
+		else:
+			print("Writing Error")
+			clientsocket.close()
+	
 
 	return render_template("database3.html",test = newRequest)
 
@@ -120,7 +133,7 @@ def openSocket():
 
 	# universal name
 	host = '0.0.0.0';                       
-	port = 10001                                  
+	port = 10000                                 
 
 	# bind to the port
 	serversocket.bind((host, port))                                  
@@ -147,17 +160,6 @@ def readRequest(serversocket):
 		clientsocket.close()
 		serversocket.close()
 		return False, 0
-
-def writeBack(clientsocket, nameData):
-	print("Write Back Function")
-	print("Writing to Socket...")
-	err = clientsocket.send(nameData)
-	if(err != -1):
-		print("Write Successful")
-		clientsocket.close()
-	else:
-		print("Writing Error")
-		clientsocket.close()
 
 	
 # route for handling the login page logic
