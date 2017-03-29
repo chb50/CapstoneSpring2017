@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1> SGD Home </h1>
+<p> Modify existing permissions or authenticate a new SGD. </p>
+
+</body>
+
+<form action="database.html" method="post">
+
+	<fieldset>
+		<legend>Identification:</legend>
+		SGD ID: <br>
+		<input type="text" name="weaponid"> <br> <br>
+
+		<input type="submit" value="Search"
+	</fieldset>
+
+</form>
+
+<br>
+<br>
+
+<form action="/postmethod" method="post">
+Have a one-time authentication key? <br>
+Then click the button below. <br> <br>
+<button onclick="authenticate()">Authenticate</button>
+</form>
+<p id="authkey"></p>
+<script>
+function authenticate()
+{
+	var key = prompt("Please enter authentication key", "K3y");
+	if(key != null)
+	{
+		window.alert("Your key " + key + " has been activated. Thank you.");
+	}
+}
+$.post("/postmethod", {
+	key: data});
+</script>
+</html>
