@@ -5,7 +5,6 @@ import MySQLdb
 from flask.ext.hashing import Hashing
 import socket
 
-
 from flaskext.mysql import MySQL
 # create the application object
 app = Flask(__name__)
@@ -21,12 +20,12 @@ app.config['MYSQL_DATABASE_DB'] = 'py'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
 
+port = 10000
+
 class sgdPacket():
 	def __init__(self, name, NFCtag):
 		self.name = name
 		self.NFCtag = NFCtag
-
-
 
 @app.route("/register",methods=['GET','POST'])
 def register():
@@ -50,8 +49,6 @@ def register():
 	#cursor = mysql.connect().cursor()
 	#cursor.execute("INSERT INTO user(userID,userName,password) VALUES ( (%d,%s, %s)",1,regname,regpw)
 	#mysql.connect.commit()
-	
-	
 
 @app.route("/Authenticate")
 def Authenticate():
@@ -64,8 +61,6 @@ def Authenticate():
      return "Username or Password is wrong"
     else:
      return "Logged in successfully"
-
-
 
 # login required decorator
 def login_required(f):
@@ -122,6 +117,7 @@ def welcome():
 		else:
 			print("Writing Error")
 			clientsocket.close()
+	serversocket.close()
 	
 
 	return render_template("database3.html",test = newRequest)
@@ -132,8 +128,7 @@ def openSocket():
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
 	# universal name
-	host = '0.0.0.0';                       
-	port = 10000                                 
+	host = '0.0.0.0';                                                    
 
 	# bind to the port
 	serversocket.bind((host, port))                                  
@@ -188,6 +183,54 @@ def logout():
     session.pop('logged_in', None)
     flash('You were logged out.')
     return redirect(url_for('login'))
+
+
+#This function still needs works
+@app.route('/nonce', methods = ['POST','GET'])
+def nonceMain():
+
+	#Gonna need key from the front end here
+	inputKey = request.form.get("key")
+
+	check = compareKey(inputKey)
+
+	return "Hello"
+
+#this function is complete but needs to be tested
+def compareKey(key):
+	print("Open Socket for One Time Key")
+	print("Input value = " + key)
+		# create a socket object
+	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+
+	# universal name
+	host = '0.0.0.0';                                                    
+
+	# bind to the port
+	serversocket.bind((host, port))                                  
+
+	# queue up to 5 requests
+	serversocket.listen(5)
+
+	data = ""
+
+	print("Searching for connection")
+	clientsocket,addr = serversocket.accept()
+	print("Got a connection from %s" % str(addr))
+
+	data += clientsocket.recv(1024)
+
+	if(data == key):
+		print("Good input")
+		clientsocket.close()
+		serversocket.close()
+		return True
+	else:
+		print("Invalid input")
+		clientsocket.close()
+		serversocket.close()
+		return False
+
 	
 
 
