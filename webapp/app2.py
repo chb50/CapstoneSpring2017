@@ -21,7 +21,7 @@ app = Flask(__name__)
 def main():
 
 	results = connection()
-	
+
 	table = [] 
 
 	for i in range(0,len(results)):
@@ -54,11 +54,16 @@ def connection():
 	i = 0
 	table = []
 
+	request = "D"
+
 	while True: #accpeting loop
 	    # establish a connection
 		print("Waiting for connection...")
 		clientsocket,addr = serversocket.accept()
 		print("Got a connection from %s" % str(addr))
+
+		clientsocket.send(request)
+
 		while True: #reading loop
 			data += clientsocket.recv(1024)#read once
 

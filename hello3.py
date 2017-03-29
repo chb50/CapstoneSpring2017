@@ -20,7 +20,7 @@ app.config['MYSQL_DATABASE_DB'] = 'py'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
 
-port = 10000
+port = 10001
 
 class sgdPacket():
 	def __init__(self, name, NFCtag):
@@ -44,12 +44,7 @@ def register():
 		return redirect(url_for('login'))
 	return render_template('register.html')
 
-	#regname = request.form['username']
-	#regpw = request.form['password']
-	#cursor = mysql.connect().cursor()
-	#cursor.execute("INSERT INTO user(userID,userName,password) VALUES ( (%d,%s, %s)",1,regname,regpw)
-	#mysql.connect.commit()
-
+	
 @app.route("/Authenticate")
 def Authenticate():
     username = request.args.get('UserName')
@@ -186,20 +181,34 @@ def logout():
 
 
 #This function still needs works
-@app.route('/nonce', methods = ['POST','GET'])
-def nonceMain():
-
+@app.route('/inputKeyHere', methods = ['POST','GET'])
+# This will be the rancdom template that takes in a key and from the user and then redirects
+#to another page where we will connect with the arduino and compare the key 
+def input():
 	#Gonna need key from the front end here
 	inputKey = request.form.get("key")
 
-	check = compareKey(inputKey)
+	#need to ask brian how to pass values through redirect
+	return redirect(url_for('nonce', inputkey=inputkey)) 
 
-	return "Hello"
 
+@app.route('/nonce')
 #this function is complete but needs to be tested
+def nonceMain():
+	# inputkey = request.args['inputkey']
+	#test
+	inkey = "SGD:OFPKLXMPWRG"
+	check = compareKey(inkey)
+
+	print check
+
+	return render_template('randomTemplate.html')
+
+
 def compareKey(key):
 	print("Open Socket for One Time Key")
 	print("Input value = " + key)
+	request = "O" #this is the request for the one time key
 		# create a socket object
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
@@ -214,14 +223,19 @@ def compareKey(key):
 
 	data = ""
 
-	print("Searching for connection")
+	print("Searching for connection...")
 	clientsocket,addr = serversocket.accept()
 	print("Got a connection from %s" % str(addr))
 
+	print("Request Sent")
+	clientsocket.send(request)
+
+	print("Waiting to Receive data...")
 	data += clientsocket.recv(1024)
 
+	print("Data Received, Comparing...")
 	if(data == key):
-		print("Good input")
+		print("Keys Match!")
 		clientsocket.close()
 		serversocket.close()
 		return True
@@ -230,6 +244,74 @@ def compareKey(key):
 		clientsocket.close()
 		serversocket.close()
 		return False
+
+
+#reading from and displaying the database
+@app.route("/sgddatabase")
+def main():
+
+	results = connection()
+
+	table = [] 
+
+	for i in range(0,len(results)):
+		table.append(results[i])
+
+	for i in range(len(results)-1, 11):
+		table.append(" ")
+	print table
+
+	return render_template("databasesgd.html", table=table, length=len(results))
+
+def connection():
+	print("Running connection")
+		# create a socket object
+	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+
+	# universal name
+	host = '0.0.0.0';                       
+	port = 10001                                       
+
+	# bind to the port
+	serversocket.bind((host, port))                                  
+
+	# queue up to 5 requests
+	serversocket.listen(5)                                           
+
+	data = ""
+	i = 0
+	table = []
+
+	request = "D" #This tell the arduino that we want the database
+
+	while True: #accpeting loop
+	    # establish a connection
+		print("Waiting for connection...")
+		clientsocket,addr = serversocket.accept()
+		print("Got a connection from %s" % str(addr))
+
+		clientsocket.send(request)
+
+		while True: #reading loop
+			data += clientsocket.recv(1024)#read once
+
+			if i == 0: #if it is the first read, check for correct starting token
+				z = data.find("SGD:") #detect starting token
+				if z == -1: #if no starting token found, break connection
+					print("NO STARTING KEY FOUND")
+					break
+
+			end = data.find("SGD:END") #if the final end token is detected, break
+			if end != -1:
+				clientsocket.close();
+				return table
+
+			r = data.find("\r\n")#detect ending line token
+			if r != -1:# if ending line token is detected
+				i = i+1 # increment index
+				table.append(data) # add the data to the table
+				data = "" # empty the data buffer
+	clientsocket.close();
 
 	
 

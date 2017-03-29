@@ -22,7 +22,7 @@ def main():
 
 def runConnection():
 	print("Running Connection")
-	name = "CuckWad" #make sure to append the termination character
+	name = "Cuck++" #make sure to append the termination character
 	request = "N" + name
 		# create a socket object
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
