@@ -6,6 +6,11 @@ import time
 
 app = Flask(__name__)
 
+# 1) Open a new page that will take in input that a new tag needs to be registered
+# 2) In the input field, input the name to be associated with the new tag and press "add new tag button"
+# 3) Will send the request "N'name'"
+# 4) Will receive confirmation from the client that tag had been registered or not
+# 5) Notify user of the registration status
 
 @app.route("/")
 def main():
@@ -17,6 +22,8 @@ def main():
 
 def runConnection():
 	print("Running Connection")
+	name = "CuckWad" #make sure to append the termination character
+	request = "N" + name
 		# create a socket object
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
@@ -34,25 +41,24 @@ def runConnection():
 
 	while True: #accepting loop
 
-		print("Searching for new tags...")
+		print("Searching for Connection...")
 		clientsocket,addr = serversocket.accept()
 		print("Got a connection from %s" % str(addr))
+
+		clientsocket.send(request)
 
 		data += clientsocket.recv(1024)#we only need to read once
 
 		end = data.find("NEW") #if the final end token is detected, break
 		if end != -1:
-			print("New tag found!")
-			print("Writing to Socket...")
-			name = "Dickling" #make sure to append the termination character
-			w = clientsocket.send(name)
-			if(w != -1):
-				print("Write Successful")
-			clientsocket.close();
+			print("New Tag Registered")
+			clientsocket.close()
+			serversocket.close()
 			return True
 		else:
-			print("No new tag found")
-			clientsocket.close(); 
+			print("Error in Registration")
+			clientsocket.close()
+			serversocket.close() 
 			return False
 
 	
