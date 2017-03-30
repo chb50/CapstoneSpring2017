@@ -5,6 +5,7 @@ import os
 from functools import wraps
 import MySQLdb
 from flask.ext.hashing import Hashing
+import socket
 
 #create app object
 app = Flask(__name__)
@@ -15,21 +16,7 @@ hashgun = Hashing(app)
 # config
 app.secret_key = os.urandom(11)
 
-#Open db connection
 
-db = MySQLdb.connect("localhost","root","password","py")
-
-#prepare cursor object
-cursor = db.cursor()
-
-#execute SQL query
-cursor.execute("SELECT VERSION()")
-
-#Fetch table using fetchall() method
-data = cursor.fetchall()
-
-print "Database version: %s " % data
-print "Database connection successful!"
 
 port = 10001
 
@@ -45,6 +32,21 @@ def register_load():
 	
 @app.route('/register', methods=['POST','GET'])
 def register():
+		#Open db connection
+
+	db = MySQLdb.connect("localhost","root","password","py")
+
+	#prepare cursor object
+	cursor = db.cursor()
+
+	#execute SQL query
+	cursor.execute("SELECT VERSION()")
+
+	#Fetch table using fetchall() method
+	data = cursor.fetchall()
+
+	print "Database version: %s " % data
+	print "Database connection successful!"
 	reguser = request.form['reguser']
 	regpass = request.form['regpass']
 	cursor = db.cursor()
@@ -66,7 +68,7 @@ def login_required(f):
     return wrap
 
 @app.route('/', methods=['GET', 'POST'])
-@login_required
+# @login_required
 def home():
 	return render_template('homepage.html')
 	
@@ -174,7 +176,7 @@ def nonceMain():
 	inputKey = session.get('oneTimeKey', None)
 
 	# inkey = "SGD:OFPKLXMPWRG"
-	check = compareKey(inputkey)
+	check = compareKey(inputKey)
 
 	print check
 
@@ -288,6 +290,17 @@ def connection():
 				table.append(data) # add the data to the table
 				data = "" # empty the data buffer
 	clientsocket.close();
+
+
+@app.route('/authorization_load', methods=['POST','GET'])
+def authorization_load():
+	return render_template('authorization.html')
+
+@app.route('/authorization', methods=['POST','GET'])
+def authorization():
+	sgdid = request.form['sgdid']
+	session['oneTimeKey'] = sgdid
+	return redirect(url_for('nonceMain'))
 
 @app.route('/DeviceAuthorization_load', methods=['POST','GET'])
 def DeviceAuthorization_load():
