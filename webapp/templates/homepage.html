@@ -4,11 +4,9 @@
 <h1> Welcome to the home page of the SGD web app </h1>
 
 <body>
-What would you like to do?
 <br><br>
-Register as a new user: <a href="{{ url_for('register_load') }}"> Register </a>
+Existing User: <a href="{{ url_for('login_load') }}"> Login </a>
 <br><br>
-Login as a registered user: <a href="{{ url_for('login_load') }}"> Login </a>
+New User: <a href="{{ url_for('register_load') }}"> Register </a>
 <br><br>
-Modify permissions of existing SGDs: <a href="{{ url_for('authorization_load') }}"> Modify </a>
-<br><br>
+

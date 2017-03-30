@@ -16,9 +16,7 @@ hashgun = Hashing(app)
 # config
 app.secret_key = os.urandom(11)
 
-
-
-port = 10001
+port = 10000
 
 #sgd packet class from hello3
 class sgdPacket():
@@ -34,7 +32,7 @@ def register_load():
 def register():
 		#Open db connection
 
-	db = MySQLdb.connect("localhost","root","password","py")
+	db = MySQLdb.connect("localhost","mainguy","password","WEBAPP")
 
 	#prepare cursor object
 	cursor = db.cursor()
@@ -68,7 +66,7 @@ def login_required(f):
     return wrap
 
 @app.route('/', methods=['GET', 'POST'])
-# @login_required
+@login_required
 def home():
 	return render_template('homepage.html')
 
@@ -227,7 +225,6 @@ def compareKey(key):
 #reading from and displaying the database
 @app.route("/sgddatabase")
 def sgdb():
-
 	results = connection()
 
 	table = [] 
@@ -281,7 +278,8 @@ def connection():
 
 			end = data.find("SGD:END") #if the final end token is detected, break
 			if end != -1:
-				clientsocket.close();
+				serversocket.close()
+				clientsocket.close()
 				return table
 
 			r = data.find("\r\n")#detect ending line token
@@ -289,7 +287,7 @@ def connection():
 				i = i+1 # increment index
 				table.append(data) # add the data to the table
 				data = "" # empty the data buffer
-	clientsocket.close();
+	clientsocket.close()
 
 
 @app.route('/authorization_load', methods=['POST','GET'])
