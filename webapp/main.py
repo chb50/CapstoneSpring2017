@@ -71,7 +71,8 @@ def login_required(f):
 # @login_required
 def home():
 	return render_template('homepage.html')
-	
+
+#This welcome page is currently being used for adding a new tag
 @app.route('/welcome',methods = ['POST','GET']) #add post and get methods to make sure
 def welcome():
 
@@ -177,11 +178,9 @@ def nonceMain():
 	print check
 
 	if check:
-		return redirect(url_for('welcome'))
+		return redirect(url_for('sgdb'))
 	else:
 		return redirect(url_for('home'))
-
-	return render_template('randomTemplate.html')
 
 
 def compareKey(key):
@@ -227,7 +226,7 @@ def compareKey(key):
 
 #reading from and displaying the database
 @app.route("/sgddatabase")
-def main():
+def sgdb():
 
 	results = connection()
 
