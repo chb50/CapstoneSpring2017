@@ -116,7 +116,7 @@ void setup(void) {
 
   randomSeed(analogRead(0));
   //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
-  deleteAll(); //for testing
+//  deleteAll(); //for testing
 //  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
   // create table at with starting address 0
   if(db.open(DB_START) != EDB_OK) { 
@@ -199,10 +199,10 @@ void loop(void) {
       {
         //search db for tag here
 //        //add nfc tag to database (for testing)
-        if (db.count() < ENTRY_COUNT) {
-          appendEntry(db.count()+1, nameGen(db.count()+1), uid);
-          Serial.println(db.count());
-         }
+//        if (db.count() < ENTRY_COUNT) {
+//          appendEntry(db.count()+1, nameGen(db.count()+1), uid);
+//          Serial.println(db.count());
+//         }
         dbCount();
         dbPrint();
         tagSearch(uid) ? smartGun.setFlags(AUTH) : smartGun.resetFlags(AUTH); //set authorization;
@@ -243,7 +243,7 @@ void loop(void) {
       digitalWrite(MEGA_WAKE, HIGH);
 
       Serial.println("WIFI MODE ACTIVE");
-      //deleteAll();
+      deleteAll();
       
 //      //add nfc tag to database (for testing)
 //      if (db.count() < ENTRY_COUNT) {
@@ -344,7 +344,7 @@ void appendEntry(int id, char* userName, uint8_t* nfcTag)
   Serial.print("Appending record...");
   entry.id = id; 
   entry.userName = userName;
-  entry.nfcTag = new uint8_t[7];
+  entry.nfcTag = new uint8_t[7]; //dynamic alloc for copying value to database. DONT FORGET TO DELETE
   for(int i = 0; i < 7; i++) {
     entry.nfcTag[i] = nfcTag[i];
   }
@@ -382,14 +382,20 @@ uint8_t tagSearch(uint8_t* uid) {
     EDB_Status result = db.readRec(recno, EDB_REC entry);
     if (result == EDB_OK)
     {
-      if (*entry.nfcTag == *uid) {
+      int match = 1;
+      for(int i = 1; i <= db.count(); ++i) {
+        if(entry.nfcTag[i] != uid[i]) {
+          match = 0;
+          break;
+        }
+      }
+      if(match) {
         Serial.println("ID Found!");
         return 1;
       }
     }
     else printError(result);
   }
-
   Serial.println("ID not found!");
   return 0;
 }
