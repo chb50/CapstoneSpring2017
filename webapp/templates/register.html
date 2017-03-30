@@ -2,20 +2,27 @@
 <html>
 <body>
 
-<h1> Smart-Gun Login </h1>
-<p> Welcome to the login page for your Smart-Gun. </p>
+<h1> Smart-Gun User Registration </h1>
+<p> Welcome to the Registration page for your Smart-Gun. </p>
 
 </body>
 
-<form name="login" action="authorization.html" onsubmit="return formValidation()" method="post">
+<form name=register action="/register" onsubmit="return formValidation()" method="post">
 
 	<fieldset>
 		<legend>Login information</legend>
+		
+		Name: <br>
+		<input type="text" name="name"> <br><br>
+		
 		Username: <br>
 		<input type="text" name="username" required> <br><br>
 
 		Password: <br>
-		<input type="password" name="password" required> <br> <br>
+		<input type="password" name="password" required> <br><br>
+		
+		Repeat Password: <br>
+		<input type="password" name="password"> <br><br>
 
 		<input type="submit" value="Login"
 	</fieldset>
@@ -25,8 +32,8 @@
 <script language=javascript>
 function formValidation()
 {
-	var user_field = document.forms["login"]["username"].value;
-	var pass_field = document.forms["login"]["password"].value;
+	var user_field = document.forms["register"]["username"].value;
+	var pass_field = document.forms["register"]["password"].value;
 	
 	if (user_field == "" && pass_field == "")
 	{

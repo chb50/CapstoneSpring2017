@@ -1,0 +1,16 @@
+How to use Git:
+
+Using a repository for the first time:
+1) Go to folder you want to put everything in
+2) type in terminal: git init
+3) type in terminal: git clone <repo name here>
+
+Pulling from github:
+1) Go to local repo folder 
+2) type in terminal: git pull origin master
+
+Pushing onto github (after making your changes):
+1) Make a git pull to ensure most up to date files
+2) type in terminal: git add . (or git add *)
+3) type in terminal: git commit -m "<message you want to commit with>"
+4) type in terminal: git push origin master

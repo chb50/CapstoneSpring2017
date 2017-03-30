@@ -5,6 +5,7 @@ import os
 from functools import wraps
 import MySQLdb
 from flask.ext.hashing import Hashing
+import socket
 
 #create app object
 app = Flask(__name__)
@@ -14,6 +15,8 @@ app = Flask(__name__)
 hashgun = Hashing(app)
 # config
 app.secret_key = os.urandom(11)
+
+port = 10001
 
 #Open db connection
 
@@ -30,8 +33,6 @@ data = cursor.fetchall()
 
 print "Database version: %s " % data
 print "Database connection successful!"
-
-port = 10001
 
 #sgd packet class from hello3
 class sgdPacket():
@@ -66,10 +67,10 @@ def login_required(f):
     return wrap
 
 @app.route('/', methods=['GET', 'POST'])
-@login_required
 def home():
 	return render_template('homepage.html')
-	
+
+#This welcome page is currently being used for adding a new tag
 @app.route('/welcome',methods = ['POST','GET']) #add post and get methods to make sure
 def welcome():
 
@@ -165,20 +166,19 @@ def logout():
 
 
 @app.route('/nonce')
-#this function is complete but needs to be tested
 def nonceMain():
-
-	# inputKey = request.form.get("key")
-	# session['oneTimeKey'] = inputkey
 
 	inputKey = session.get('oneTimeKey', None)
 
 	# inkey = "SGD:OFPKLXMPWRG"
-	check = compareKey(inputkey)
+	check = compareKey(inputKey)
 
 	print check
 
-	return render_template('randomTemplate.html')
+	if check:
+		return redirect(url_for('sgdb'))
+	else:
+		return redirect(url_for('home'))
 
 
 def compareKey(key):
@@ -224,8 +224,7 @@ def compareKey(key):
 
 #reading from and displaying the database
 @app.route("/sgddatabase")
-def main():
-
+def sgdb():
 	results = connection()
 
 	table = [] 
@@ -279,7 +278,8 @@ def connection():
 
 			end = data.find("SGD:END") #if the final end token is detected, break
 			if end != -1:
-				clientsocket.close();
+				serversocket.close()
+				clientsocket.close()
 				return table
 
 			r = data.find("\r\n")#detect ending line token
@@ -287,7 +287,18 @@ def connection():
 				i = i+1 # increment index
 				table.append(data) # add the data to the table
 				data = "" # empty the data buffer
-	clientsocket.close();
+	clientsocket.close()
+
+
+@app.route('/authorization_load', methods=['POST','GET'])
+def authorization_load():
+	return render_template('authorization.html')
+
+@app.route('/authorization', methods=['POST','GET'])
+def authorization():
+	sgdid = request.form['sgdid']
+	session['oneTimeKey'] = sgdid
+	return redirect(url_for('nonceMain'))
 
 @app.route('/DeviceAuthorization_load', methods=['POST','GET'])
 def DeviceAuthorization_load():
