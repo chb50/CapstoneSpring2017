@@ -44,7 +44,7 @@ def register():
 		return redirect(url_for('login'))
 	return render_template('register.html')
 
-	
+
 @app.route("/Authenticate")
 def Authenticate():
     username = request.args.get('UserName')
@@ -180,25 +180,17 @@ def logout():
     return redirect(url_for('login'))
 
 
-#This function still needs works
-@app.route('/inputKeyHere', methods = ['POST','GET'])
-# This will be the rancdom template that takes in a key and from the user and then redirects
-#to another page where we will connect with the arduino and compare the key 
-def input():
-	#Gonna need key from the front end here
-	inputKey = request.form.get("key")
-
-	#need to ask brian how to pass values through redirect
-	return redirect(url_for('nonce', inputkey=inputkey)) 
-
-
 @app.route('/nonce')
 #this function is complete but needs to be tested
 def nonceMain():
-	# inputkey = request.args['inputkey']
-	#test
-	inkey = "SGD:OFPKLXMPWRG"
-	check = compareKey(inkey)
+
+	# inputKey = request.form.get("key")
+	# session['oneTimeKey'] = inputkey
+
+	inputKey = session.get('oneTimeKey', None)
+
+	# inkey = "SGD:OFPKLXMPWRG"
+	check = compareKey(inputkey)
 
 	print check
 
