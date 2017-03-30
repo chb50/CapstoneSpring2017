@@ -2,7 +2,8 @@ How to use Git:
 
 Using a repository for the first time:
 1) Go to folder you want to put everything in
-2) type in terminal: git clone <repo name here>
+2) type in terminal: git init
+3) type in terminal: git clone <repo name here>
 
 Pulling from github:
 1) Go to local repo folder 
