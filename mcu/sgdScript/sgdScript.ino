@@ -84,11 +84,11 @@ Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 #endif
 
 /*Wifi Stuff*/
-//char ssid[] = "HTC One_M8_BC20"; //  your network SSID (name)
-//char pass[] = "ClapOn88";
+char ssid[] = "HTC One_M8_BC20"; //  your network SSID (name)
+char pass[] = "ClapOn88";
 
-char ssid[] = "CB6SC"; //  your network SSID (name)
-char pass[] = "YWXYGTR36XGSJBY6";
+//char ssid[] = "CB6SC"; //  your network SSID (name)
+//char pass[] = "YWXYGTR36XGSJBY6";
 
 int keyIndex = 0;            // your network key Index number (needed only for WEP)
 int z = 0;
@@ -96,7 +96,7 @@ int z = 0;
 int status = WL_IDLE_STATUS;
 // if you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
-IPAddress server(192,168,1,5);  // numeric IP for Google (no DNS)
+IPAddress server(192,168,1,164);  // numeric IP for Google (no DNS)
 //char server[] = "www.google.com";    // name address for Google (using DNS)
 
 // Initialize the Ethernet client library
@@ -139,9 +139,7 @@ void setup(void) {
   }
   
   // Got ok data, print it out!
-  Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX); 
-  Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC); 
-  Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
+  Serial.print("Found chip PN5\n");
   
   // configure board to read RFID tags
   nfc.SAMConfig();
@@ -149,7 +147,6 @@ void setup(void) {
   /*SMARTGUN SETUP*/
   smartGun.setFlags(AWAKE); //for now, assume that the device is owned by the user and that it is awake on startup
   smartGun.resetFlags(WIFI_CONN); //not connected to wifi yet
-  Serial.println(smartGun.getFlags(), BIN);
 
   /*WATCHDOG SETUP*/
   wdt_disable(); //always good to disable it, if it was left 'on' or you need init time
@@ -171,6 +168,7 @@ void loop(void) {
   uint8_t success;
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+  
   smartGun.setFlags(REG);
     
   // Wait for an NTAG203 card.  When one is found 'uid' will be populated with
@@ -178,21 +176,20 @@ void loop(void) {
 
   //NOTE: need this print to store and hold the username on the database
   //WATCH OUT FOR THIS, it may give bugs if we try to add multiple tags
-  Serial.print("USERNAME TEST: ");
   Serial.print(newUsrNm);
-  Serial.println();
-
-  Serial.println("Waiting for an ISO14443A Card ...");
-  success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+  Serial.println("\nTime to change mode!");
+  delay(5000);
 
   if(digitalRead(MODE) == LOW) { //then we are not in wifi mode
+    
     Serial.println("FIRING MODE ACTIVE");
+
+    Serial.println("\nWaiting for an ISO14443A Card ...");
+    success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
         
     if (success) {
       // Display some basic information about the card
       Serial.println("Found an ISO14443A card");
-      Serial.print("  UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes");
-      Serial.print("  UID Value: ");
       nfc.PrintHex(uid, uidLength);
       Serial.println("");
       
@@ -200,37 +197,21 @@ void loop(void) {
       {
         //search db for tag here
 //        //add nfc tag to database (for testing)
-//        if ((smartGun.db)->count() < ENTRY_COUNT) {
-//          appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
-//          Serial.println((smartGun.db)->count());
-//         }
-//        dbCount(); 
+        if ((smartGun.db)->count() < ENTRY_COUNT) {
+          appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
+          Serial.println((smartGun.db)->count());
+         }
+        dbCount();
         dbPrint();
-        tagSearch(uid);
+        tagSearch(uid) ? smartGun.setFlags(AUTH) : smartGun.resetFlags(AUTH); //set authorization;
         //ready gun to fire if authorization has been approved
         smartGun.getFlags() & AUTH ? digitalWrite(FIRE_BUTTON, HIGH): digitalWrite(FIRE_BUTTON, LOW);
         
         uint8_t data[32];
-        
-        // We probably have an NTAG2xx card (though it could be Ultralight as well)
-        Serial.println("Seems to be an NTAG2xx tag (7 byte UID)");         
   
         for (uint8_t i = 0; i < 42; i++) 
         {
           success = nfc.ntag2xx_ReadPage(i, data);
-          
-          // Display the current page number
-          Serial.print("PAGE ");
-          if (i < 10)
-          {
-            Serial.print("0");
-            Serial.print(i);
-          }
-          else
-          {
-            Serial.print(i);
-          }
-          Serial.print(": ");
   
           // Display the results, depending on 'success'
           if (success) 
@@ -260,16 +241,13 @@ void loop(void) {
       digitalWrite(MEGA_WAKE, HIGH);
 
       Serial.println("WIFI MODE ACTIVE");
-      Serial.println("DELETING DATABASE for testing adding tag req");
-      deleteAll();
+      //deleteAll();
       
 //      //add nfc tag to database (for testing)
 //      if ((smartGun.db)->count() < ENTRY_COUNT) {
 //        appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
 //        Serial.println((smartGun.db)->count());
 //       }
-//      dbCount(); 
-//      dbPrint();
 
       // check for the presence of the shield:
       if (WiFi.status() == WL_NO_SHIELD) {
@@ -288,7 +266,6 @@ void loop(void) {
         // wait 10 seconds for connection:
         delay(10000);
       }
-      Serial.println("Connected to wifi");
       //printWiFiStatus();
     
       Serial.println("\nStarting connection to server...");
@@ -296,28 +273,13 @@ void loop(void) {
 
       z = client.connect(server,PORT);
       if(z) {
-        Serial.println("connected to server");
         smartGun.setFlags(WIFI_CONN);
       } else {
         Serial.println("error in client connection");
         return 0;
       }
-      
-      //sendDb(); //send the database info to the web app
 
-      Serial.flush();
-      if(tagSearch(uid) == 0) { //if tag does not exist in db
-         Serial.println("New tag found! req to add from web app");
-         if(sendNewTagReq(newUsrNm) == 1) {
-            char* nameBuff = newUsrNm;
-         
-            if ((smartGun.db)->count() < ENTRY_COUNT) {
-              appendEntry((smartGun.db)->count()+1, newUsrNm, uid);
-            } else {
-              Serial.println("NOT ENOUGH SPACE IN DATABASE");
-            }
-         }
-      }
+      reqHandle(newUsrNm, uid, uidLength);
       
       // if the server's disconnected, stop the client:
       if (!client.connected()) {
@@ -336,8 +298,7 @@ void loop(void) {
     }
     
     Serial.flush();
-    sysRestart(); //restart the system
-    
+    //sysRestart(); //restart the system, use if wifi back to nfc is giving you trouble
   }
 }
 
@@ -384,20 +345,17 @@ void appendEntry(int id, char* userName, uint8_t* nfcTag)
   entry.nfcTag = nfcTag;
   EDB_Status result = (smartGun.db)->appendRec(EDB_REC entry);
   if (result != EDB_OK) printError(result);
-  Serial.println("DONE");
 }
 
 void deleteAll()
 {
   Serial.print("Truncating table...");
   (smartGun.db)->clear();
-  Serial.println("DONE");
 }
 
 void deleteEntry(int recno)
 {
-  Serial.print("Deleting recno: ");
-  Serial.println(recno);
+  Serial.print("Deleting recno");
   (smartGun.db)->deleteRec(recno);
 }
 
@@ -408,8 +366,7 @@ uint8_t tagSearch(uint8_t* uid) {
     if (result == EDB_OK)
     {
       if (entry.nfcTag == uid) {
-        Serial.println("ID success!");
-        smartGun.setFlags(AUTH); //set authorization
+        Serial.println("ID Found!");
         return 1;
       }
     }
@@ -417,16 +374,24 @@ uint8_t tagSearch(uint8_t* uid) {
   }
 
   Serial.println("ID not found!");
-  smartGun.resetFlags(AUTH); //remove authorization
   return 0;
+}
+
+void sendId() {
+  if(smartGun.getFlags() & WIFI_CONN){
+    Serial.println("Sending ID");
+    client.println(smartGun.getSgdId());
+  } else {
+    Serial.println("Failed to retrieve id");
+  }
 }
 
 //TODO: need to retest this
 void sendDb() {
   if (smartGun.getFlags() & WIFI_CONN) { //nfc craps out when we try to send information
-    Serial.println("connected to server");
-    client.println(smartGun.getSgdId());
-
+    Serial.println("Sending DB info");
+    client.println("SGD:"); // starting token
+    
     for(int i = 1; i <= (smartGun.db)->count(); i++) {
       EDB_Status result = (smartGun.db)->readRec(i, EDB_REC entry);
       if (result == EDB_OK){
@@ -452,17 +417,17 @@ void sendDb() {
   }
 }
 
-uint8_t sendNewTagReq(char* newUsrNm) {
+uint8_t getNewTagName(char* newUsrNm) {
+  wdt_enable(WDTO_8S); //watchdog set to 8 sec for infinite loop in this function
   if(smartGun.getFlags() & WIFI_CONN) { //check to see if we connected to the webapp
     int i = 0;
-    client.print("NEW");
-    client.flush();
     
     //will need to read info given from user
     // if there are incoming bytes available
     // from the server, read them and print them:
     Serial.println("Recieving username...");
-    while(!client.available());//TODO, add a wd timeout here; //wait for info to be availible
+    while(!client.available());
+    wdt_reset(); //reset wd so system doesnt restart
     do {
       newUsrNm[i] = client.read();
       i++;
@@ -470,30 +435,63 @@ uint8_t sendNewTagReq(char* newUsrNm) {
         newUsrNm[i] = '\0';
       }
     }while (client.available());
-    Serial.println("DONE");
+    wdt_reset();
+    wdt_disable();
+    client.print("NEW");
+    Serial.println(newUsrNm);
     return 1;
   } else {
     Serial.println("Smartgun not connected!");
+    wdt_disable();
     return 0;
   }
 }
 
-/*WIFI HELPER FUNCTION*/
-void printWiFiStatus() {
-  // print the SSID of the network you're attached to:
-  Serial.print("SSID: ");
-  Serial.println(WiFi.SSID());
+void readNewTag(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
+  uint8_t success;
 
-  // print your WiFi shield's IP address:
-  IPAddress ip = WiFi.localIP();
-  Serial.print("IP Address: ");
-  Serial.println(ip);
+  Serial.println("Waiting for an ISO14443A Card ...");
+  success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+  //search through database to see if tag is already in there
+  if(!tagSearch(uid)) {
+    Serial.println("adding tag!");
+    if ((smartGun.db)->count() < ENTRY_COUNT) {
+      appendEntry((smartGun.db)->count()+1, newUsrNm, uid);
+    } else {
+      Serial.println("NOT ENOUGH SPACE IN DATABASE");
+      return;
+    }
+  } else {
+    Serial.println("Tag already exists!");
+    return;
+  }
+}
 
-  // print the received signal strength:
-  long rssi = WiFi.RSSI();
-  Serial.print("signal strength (RSSI):");
-  Serial.print(rssi);
-  Serial.println(" dBm");
+//recieves request from database about which data to send
+void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
+  wdt_enable(WDTO_8S);
+ Serial.println("waiting for request");
+  while(!client.available());
+  wdt_reset();
+
+  char c = client.read();
+  switch (c) {
+    case 'O':
+      sendId();
+      break;
+    case 'D':
+      sendDb();
+      break;
+    case 'N':
+      getNewTagName(newUsrNm);
+      client.stop();
+      readNewTag(newUsrNm, uid, uidLength);
+      break;
+    default:
+      Serial.println("INVALID REQUEST");
+      break;
+  }
+  wdt_disable();
 }
 
 void printError(EDB_Status err)
@@ -539,36 +537,8 @@ char* nameGen(int id) {
   return nameSim;
 }
 
-//watchdog reset function
-void wdt_delay(unsigned long msec) {
-  wdt_reset();
-  
-  while(msec > 1000) {
-    wdt_reset();
-    delay(1000);
-    msec -= 1000;
-  }
-  delay(msec);
-  wdt_reset();
-}
-
 //forced restart function
 void sysRestart() {
   wdt_enable(WDTO_1S); //endable wtd to 1s, and wait 1 sec for sys retart
   delay(1001);
-}
-
-/*for debugging*/
-
-// this function will return the number of bytes currently free in RAM      
-extern int  __bss_end; 
-extern int  *__brkval; 
-int freemem()
-{ 
-int free_memory; 
-if((int)__brkval == 0) 
-   free_memory = ((int)&free_memory) - ((int)&__bss_end); 
-else 
-   free_memory = ((int)&free_memory) - ((int)__brkval); 
-return free_memory; 
 }
