@@ -16,7 +16,20 @@ hashgun = Hashing(app)
 # config
 app.secret_key = os.urandom(11)
 
-port = 10000
+port = 10001
+
+		#Open db connection
+
+db = MySQLdb.connect("localhost","mainguy","password","WEBAPP")
+
+	#prepare cursor object
+cursor = db.cursor()
+
+	#execute SQL query
+cursor.execute("SELECT VERSION()")
+
+	#Fetch table using fetchall() method
+data = cursor.fetchall()
 
 #sgd packet class from hello3
 class sgdPacket():
@@ -26,22 +39,11 @@ class sgdPacket():
 
 @app.route('/register_load', methods=['POST','GET'])
 def register_load():
-	return render_template('register.html')
+	return render_template('register_h.html')
 	
 @app.route('/register', methods=['POST','GET'])
 def register():
-		#Open db connection
 
-	db = MySQLdb.connect("localhost","mainguy","password","WEBAPP")
-
-	#prepare cursor object
-	cursor = db.cursor()
-
-	#execute SQL query
-	cursor.execute("SELECT VERSION()")
-
-	#Fetch table using fetchall() method
-	data = cursor.fetchall()
 
 	print "Database version: %s " % data
 	print "Database connection successful!"
@@ -66,7 +68,6 @@ def login_required(f):
     return wrap
 
 @app.route('/', methods=['GET', 'POST'])
-@login_required
 def home():
 	return render_template('homepage.html')
 
