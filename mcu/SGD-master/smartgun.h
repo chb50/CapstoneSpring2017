@@ -31,15 +31,9 @@ typedef enum {
 class SGD {
 
 	public:
-		//pulled from EDB code
-		typedef void EDB_Write_Handler(unsigned long, const uint8_t);
-    	typedef uint8_t EDB_Read_Handler(unsigned long);
-    	
-		//variable
-		EDB* db; //database instance
 
 		//functions
-		SGD(EDB_Write_Handler *, EDB_Read_Handler *); //should create an ID for the gun on instance creation
+		SGD(); //should create an ID for the gun on instance creation
 		~SGD();
 		uint8_t getFlags();
 		void setFlags(SGD_Status); //set flags using bitwise OR

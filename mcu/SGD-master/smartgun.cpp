@@ -6,7 +6,7 @@
 #include <EDB.h>
 
 
-SGD::SGD(EDB_Write_Handler *w, EDB_Read_Handler *r) {
+SGD::SGD() {
 	//generate random id to upload
 	sgdId = new char[16];
 	srand(time(NULL));
@@ -19,14 +19,10 @@ SGD::SGD(EDB_Write_Handler *w, EDB_Read_Handler *r) {
 
 	sgdId[15] = '\0';
 
-	//initialize database
-	db = new EDB(w,r);
-
 }
 
 SGD::~SGD() {
 	delete sgdId;
-	delete db;
 }
 
 uint8_t SGD::getFlags() {

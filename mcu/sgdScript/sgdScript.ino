@@ -20,6 +20,7 @@
 
 #include "Arduino.h"
 #include <smartgun.h>
+#include <EDB.h>
 #include <EEPROM.h>
 #include <assert.h>
 #include <Wire.h>
@@ -40,7 +41,7 @@
 #define MEGA_IRQ 21
 #define MEGA_RST 46
 #define MEGA_WAKE 41
-#define PORT 10000
+#define PORT 10001
 
 struct entry {
   //800 bytes for 10 entries
@@ -61,8 +62,9 @@ byte reader(unsigned long address)
   return EEPROM.read(address);
 }
 
-// Create an SGD object with the appropriate write and read handlers for E(smartGun.db) object
-SGD smartGun(&writer, &reader);
+// Create an SGD and EDB object
+SGD smartGun;
+EDB db(&writer, &reader);
 
 /***NFC STUFF ***/
 /* this is coded using I2C communication,
@@ -96,7 +98,7 @@ int z = 0;
 int status = WL_IDLE_STATUS;
 // if you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
-IPAddress server(192,168,1,164);  // numeric IP for Google (no DNS)
+IPAddress server(192,168,1,31);  // numeric IP for Google (no DNS)
 //char server[] = "www.google.com";    // name address for Google (using DNS)
 
 // Initialize the Ethernet client library
@@ -115,12 +117,12 @@ void setup(void) {
   randomSeed(analogRead(0));
   //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
 //  deleteAll(); //for testing
-//  (smartGun.db)->create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
+//  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
   // create table at with starting address 0
-  if((smartGun.db)->open(DB_START) != EDB_OK) { 
+  if(db.open(DB_START) != EDB_OK) { 
     Serial.println("Database does not exist on this device");
     Serial.println("Creating database");
-    (smartGun.db)->create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry));
+    db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry));
   } else {
     Serial.println("Using Stored Database");
   }
@@ -197,10 +199,10 @@ void loop(void) {
       {
         //search db for tag here
 //        //add nfc tag to database (for testing)
-        if ((smartGun.db)->count() < ENTRY_COUNT) {
-          appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
-          Serial.println((smartGun.db)->count());
-         }
+//        if (db.count() < ENTRY_COUNT) {
+//          appendEntry(db.count()+1, nameGen(db.count()+1), uid);
+//          Serial.println(db.count());
+//         }
         dbCount();
         dbPrint();
         tagSearch(uid) ? smartGun.setFlags(AUTH) : smartGun.resetFlags(AUTH); //set authorization;
@@ -244,9 +246,9 @@ void loop(void) {
       //deleteAll();
       
 //      //add nfc tag to database (for testing)
-//      if ((smartGun.db)->count() < ENTRY_COUNT) {
-//        appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
-//        Serial.println((smartGun.db)->count());
+//      if (db.count() < ENTRY_COUNT) {
+//        appendEntry(db.count()+1, nameGen(db.count()+1), uid);
+//        Serial.println(db.count());
 //       }
 
       // check for the presence of the shield:
@@ -292,7 +294,7 @@ void loop(void) {
 
     digitalWrite(MEGA_WAKE, LOW);
 
-    if ((smartGun.db)->count() >= ENTRY_COUNT) {
+    if (db.count() >= ENTRY_COUNT) {
       Serial.println("DB limit reached, resetting db");
       deleteAll();
     }
@@ -307,20 +309,20 @@ void loop(void) {
 //gives max number of entries allowed
 void dbLimit() {
   Serial.print("Database Limit: ");
-  Serial.println((smartGun.db)->limit());
+  Serial.println(db.limit());
 }
 
 //gives the current number of entries in the database
 int dbCount() {
   Serial.print("Database count: ");
-  Serial.println((smartGun.db)->count());
-  return (smartGun.db)->count();
+  Serial.println(db.count());
+  return db.count();
 }
 
 void dbPrint() {
   Serial.println("Printing database");
-  for(int i = 1; i <= (smartGun.db)->count(); ++i) {
-    EDB_Status result = (smartGun.db)->readRec(i, EDB_REC entry); //EDB_REC is the struct instance of an entry in the table
+  for(int i = 1; i <= db.count(); ++i) {
+    EDB_Status result = db.readRec(i, EDB_REC entry); //EDB_REC is the struct instance of an entry in the table
       if (result == EDB_OK) {
         Serial.println("id: ");
         Serial.println(entry.id);
@@ -343,26 +345,26 @@ void appendEntry(int id, char* userName, uint8_t* nfcTag)
   entry.id = id; 
   entry.userName = userName;
   entry.nfcTag = nfcTag;
-  EDB_Status result = (smartGun.db)->appendRec(EDB_REC entry);
+  EDB_Status result = db.appendRec(EDB_REC entry);
   if (result != EDB_OK) printError(result);
 }
 
 void deleteAll()
 {
   Serial.print("Truncating table...");
-  (smartGun.db)->clear();
+  db.clear();
 }
 
 void deleteEntry(int recno)
 {
   Serial.print("Deleting recno");
-  (smartGun.db)->deleteRec(recno);
+  db.deleteRec(recno);
 }
 
 uint8_t tagSearch(uint8_t* uid) {
-  for (int recno = 1; recno <= (smartGun.db)->count(); recno++)
+  for (int recno = 1; recno <= db.count(); recno++)
   {
-    EDB_Status result = (smartGun.db)->readRec(recno, EDB_REC entry);
+    EDB_Status result = db.readRec(recno, EDB_REC entry);
     if (result == EDB_OK)
     {
       if (entry.nfcTag == uid) {
@@ -392,8 +394,8 @@ void sendDb() {
     Serial.println("Sending DB info");
     client.println("SGD:"); // starting token
     
-    for(int i = 1; i <= (smartGun.db)->count(); i++) {
-      EDB_Status result = (smartGun.db)->readRec(i, EDB_REC entry);
+    for(int i = 1; i <= db.count(); i++) {
+      EDB_Status result = db.readRec(i, EDB_REC entry);
       if (result == EDB_OK){
         client.print(entry.id);
         client.print(" ");
@@ -455,8 +457,8 @@ void readNewTag(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
   //search through database to see if tag is already in there
   if(!tagSearch(uid)) {
     Serial.println("adding tag!");
-    if ((smartGun.db)->count() < ENTRY_COUNT) {
-      appendEntry((smartGun.db)->count()+1, newUsrNm, uid);
+    if (db.count() < ENTRY_COUNT) {
+      appendEntry(db.count()+1, newUsrNm, uid);
     } else {
       Serial.println("NOT ENOUGH SPACE IN DATABASE");
       return;

@@ -31,7 +31,6 @@ typedef byte* EDB_Rec;
 #define EDB_REC (byte*)(void*)&
 
 class EDB {
-  friend class SGD;
   public:
     typedef void EDB_Write_Handler(unsigned long, const uint8_t);
     typedef uint8_t EDB_Read_Handler(unsigned long);
