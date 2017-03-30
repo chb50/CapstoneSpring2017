@@ -1,23 +1,58 @@
+<!DOCTYPE html>
 <html>
-  <head>
-    <title>Flask Intro - login page</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
-  </head>
-  <body>
-    <div class="container">
-      <h1>Please register</h1>
-      <br>
-      <form action="" method="post">
-        <input type="text" placeholder="Username" name="username" value="{{
-          request.form.username }}">
-         <input type="password" placeholder="Password" name="password" value="{{
-          request.form.password }}">
-        <input class="btn btn-default" type="submit" value="Login">
-      </form>
-      {% if error %}
-        <p class="error"><strong>Error:</strong> {{ error }}
-      {% endif %}
-    </div>
-  </body>
+<body>
+
+<h1> Smart-Gun User Registration </h1>
+<p> Welcome to the Registration page for your Smart-Gun. </p>
+
+</body>
+
+<form name=register action="/register" onsubmit="return formValidation()" method="post">
+
+	<fieldset>
+		<legend>Login information</legend>
+		
+		Name: <br>
+		<input type="text" name="name"> <br><br>
+		
+		Username: <br>
+		<input type="text" name="username" required> <br><br>
+
+		Password: <br>
+		<input type="password" name="password" required> <br><br>
+		
+		Repeat Password: <br>
+		<input type="password" name="password"> <br><br>
+
+		<input type="submit" value="Login"
+	</fieldset>
+
+</form>
+
+<script language=javascript>
+function formValidation()
+{
+	var user_field = document.forms["register"]["username"].value;
+	var pass_field = document.forms["register"]["password"].value;
+	
+	if (user_field == "" && pass_field == "")
+	{
+		alert("Please fill out username and password fields.");
+		return false;
+	}
+	
+	else if (user_field == "")
+	{
+		alert("Please fill out username field.");
+		return false;
+	}
+	
+	else if (pass_field == "")
+	{
+		alert("Please fill out password field.");
+		return false;
+	}
+}
+</script>
+
 </html>

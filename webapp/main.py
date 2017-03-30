@@ -18,18 +18,21 @@ app.secret_key = os.urandom(11)
 
 port = 10001
 
-		#Open db connection
+#Open db connection
 
-db = MySQLdb.connect("localhost","mainguy","password","WEBAPP")
+db = MySQLdb.connect("localhost","root","password","py")
 
-	#prepare cursor object
+#prepare cursor object
 cursor = db.cursor()
 
-	#execute SQL query
+#execute SQL query
 cursor.execute("SELECT VERSION()")
 
-	#Fetch table using fetchall() method
+#Fetch table using fetchall() method
 data = cursor.fetchall()
+
+print "Database version: %s " % data
+print "Database connection successful!"
 
 #sgd packet class from hello3
 class sgdPacket():
@@ -39,14 +42,10 @@ class sgdPacket():
 
 @app.route('/register_load', methods=['POST','GET'])
 def register_load():
-	return render_template('register_h.html')
+	return render_template('register.html')
 	
 @app.route('/register', methods=['POST','GET'])
 def register():
-
-
-	print "Database version: %s " % data
-	print "Database connection successful!"
 	reguser = request.form['reguser']
 	regpass = request.form['regpass']
 	cursor = db.cursor()
