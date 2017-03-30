@@ -167,18 +167,21 @@ def logout():
 
 
 @app.route('/nonce')
-#this function is complete but needs to be tested
 def nonceMain():
-
-	# inputKey = request.form.get("key")
-	# session['oneTimeKey'] = inputkey
 
 	inputKey = session.get('oneTimeKey', None)
 
 	# inkey = "SGD:OFPKLXMPWRG"
-	check = compareKey(inputKey)
+	# check = compareKey(inputKey)
+
+	check = False
 
 	print check
+
+	if check:
+		return redirect(url_for('welcome'))
+	else:
+		return redirect(url_for('home'))
 
 	return render_template('randomTemplate.html')
 
