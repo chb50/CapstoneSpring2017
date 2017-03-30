@@ -172,9 +172,7 @@ def nonceMain():
 	inputKey = session.get('oneTimeKey', None)
 
 	# inkey = "SGD:OFPKLXMPWRG"
-	# check = compareKey(inputKey)
-
-	check = False
+	check = compareKey(inputKey)
 
 	print check
 
