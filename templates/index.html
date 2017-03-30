@@ -12,6 +12,7 @@
       <br>
       <p>Click <a href="/welcome">here</a> display database.</p>
 	  <p>Click <a href="/logout">here</a> logout.</p>
+	  <!--><p>Click <a href="/inputKeyHere">here</a>addkey</p> -->
 	  <button onclick="myFunction()">Click for device</button>
 	  <p id = "test"></p>
 	  </form>
@@ -23,7 +24,7 @@
 		{
 			document.getElementById("test").innerHTML = "ID IS" + " "+input;
 			$(document).ready(function(){document.append("TEST");});
-			$.post("/",{"test": input})
+			$.post("/",{"test": input}) //first argument is route,second is name of field/data
 			
 		}
 	  }
