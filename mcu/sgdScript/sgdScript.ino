@@ -41,7 +41,7 @@
 #define MEGA_IRQ 21
 #define MEGA_RST 46
 #define MEGA_WAKE 41
-#define PORT 10001
+#define PORT 10000
 
 struct entry {
   //800 bytes for 10 entries
@@ -98,7 +98,7 @@ int z = 0;
 int status = WL_IDLE_STATUS;
 // if you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
-IPAddress server(192,168,1,31);  // numeric IP for Google (no DNS)
+IPAddress server(192,168,1,164);  // numeric IP for Google (no DNS)
 //char server[] = "www.google.com";    // name address for Google (using DNS)
 
 // Initialize the Ethernet client library
@@ -116,7 +116,7 @@ void setup(void) {
 
   randomSeed(analogRead(0));
   //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
-//  deleteAll(); //for testing
+  deleteAll(); //for testing
 //  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
   // create table at with starting address 0
   if(db.open(DB_START) != EDB_OK) { 
@@ -199,10 +199,10 @@ void loop(void) {
       {
         //search db for tag here
 //        //add nfc tag to database (for testing)
-//        if (db.count() < ENTRY_COUNT) {
-//          appendEntry(db.count()+1, nameGen(db.count()+1), uid);
-//          Serial.println(db.count());
-//         }
+        if (db.count() < ENTRY_COUNT) {
+          appendEntry(db.count()+1, nameGen(db.count()+1), uid);
+          Serial.println(db.count());
+         }
         dbCount();
         dbPrint();
         tagSearch(uid) ? smartGun.setFlags(AUTH) : smartGun.resetFlags(AUTH); //set authorization;
@@ -344,7 +344,10 @@ void appendEntry(int id, char* userName, uint8_t* nfcTag)
   Serial.print("Appending record...");
   entry.id = id; 
   entry.userName = userName;
-  entry.nfcTag = nfcTag;
+  entry.nfcTag = new uint8_t[7];
+  for(int i = 0; i < 7; i++) {
+    entry.nfcTag[i] = nfcTag[i];
+  }
   EDB_Status result = db.appendRec(EDB_REC entry);
   if (result != EDB_OK) printError(result);
 }
@@ -352,12 +355,24 @@ void appendEntry(int id, char* userName, uint8_t* nfcTag)
 void deleteAll()
 {
   Serial.print("Truncating table...");
+  for(int i = 1; i <= db.count(); ++i) {
+    EDB_Status result = db.readRec(i, EDB_REC entry); //EDB_REC is the struct instance of an entry in the table
+    if (result == EDB_OK) {
+      delete entry.nfcTag;
+    }
+    else printError(result);
+  }
   db.clear();
 }
 
 void deleteEntry(int recno)
 {
   Serial.print("Deleting recno");
+  EDB_Status result = db.readRec(recno, EDB_REC entry); //EDB_REC is the struct instance of an entry in the table
+  if (result == EDB_OK) {
+    delete entry.nfcTag;
+  }
+  else printError(result);
   db.deleteRec(recno);
 }
 
@@ -367,7 +382,7 @@ uint8_t tagSearch(uint8_t* uid) {
     EDB_Status result = db.readRec(recno, EDB_REC entry);
     if (result == EDB_OK)
     {
-      if (entry.nfcTag == uid) {
+      if (*entry.nfcTag == *uid) {
         Serial.println("ID Found!");
         return 1;
       }
