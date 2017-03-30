@@ -1,25 +1,23 @@
-<!DOCTYPE html>
 <html>
-<body>
-
-<h1> Smart-Gun Login </h1>
-<p> Welcome to the login page for your Smart-Gun. </p>
-
-</body>
-
-<form action="authorization.html" method="post">
-
-	<fieldset>
-		<legend>Login information</legend>
-		Username: <br>
-		<input type="text" name="username"> <br><br>
-
-		Password: <br>
-		<input type="text" name="password"> <br> <br>
-
-		<input type="submit" value="Login"
-	</fieldset>
-
-</form>
-
+  <head>
+    <title>Flask Intro - login page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Please login</h1>
+      <br>
+      <form action="" method="post">
+        <input type="text" placeholder="Username" name="username" value="{{
+          request.form.username }}">
+         <input type="password" placeholder="Password" name="password" value="{{
+          request.form.password }}">
+        <input class="btn btn-default" type="submit" value="Login">
+      </form>
+      {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}
+      {% endif %}
+    </div>
+  </body>
 </html>
