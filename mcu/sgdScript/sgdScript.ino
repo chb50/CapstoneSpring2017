@@ -40,7 +40,7 @@
 #define MEGA_IRQ 21
 #define MEGA_RST 46
 #define MEGA_WAKE 41
-#define PORT 10001
+#define PORT 10000
 
 struct entry {
   //800 bytes for 10 entries
@@ -96,7 +96,7 @@ int z = 0;
 int status = WL_IDLE_STATUS;
 // if you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
-IPAddress server(192,168,1,31);  // numeric IP for Google (no DNS)
+IPAddress server(192,168,1,164);  // numeric IP for Google (no DNS)
 //char server[] = "www.google.com";    // name address for Google (using DNS)
 
 // Initialize the Ethernet client library
@@ -139,7 +139,7 @@ void setup(void) {
   }
   
   // Got ok data, print it out!
-  Serial.print("Found chip PN5");
+  Serial.print("Found chip PN5\n");
   
   // configure board to read RFID tags
   nfc.SAMConfig();
@@ -177,6 +177,8 @@ void loop(void) {
   //NOTE: need this print to store and hold the username on the database
   //WATCH OUT FOR THIS, it may give bugs if we try to add multiple tags
   Serial.print(newUsrNm);
+  Serial.println("\nTime to change mode!");
+  delay(5000);
 
   if(digitalRead(MODE) == LOW) { //then we are not in wifi mode
     
@@ -195,11 +197,12 @@ void loop(void) {
       {
         //search db for tag here
 //        //add nfc tag to database (for testing)
-//        if ((smartGun.db)->count() < ENTRY_COUNT) {
-//          appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
-//          Serial.println((smartGun.db)->count());
-//         }
+        if ((smartGun.db)->count() < ENTRY_COUNT) {
+          appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
+          Serial.println((smartGun.db)->count());
+         }
         dbCount();
+        dbPrint();
         tagSearch(uid) ? smartGun.setFlags(AUTH) : smartGun.resetFlags(AUTH); //set authorization;
         //ready gun to fire if authorization has been approved
         smartGun.getFlags() & AUTH ? digitalWrite(FIRE_BUTTON, HIGH): digitalWrite(FIRE_BUTTON, LOW);
@@ -241,10 +244,10 @@ void loop(void) {
       //deleteAll();
       
 //      //add nfc tag to database (for testing)
-      if ((smartGun.db)->count() < ENTRY_COUNT) {
-        appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
-        Serial.println((smartGun.db)->count());
-       }
+//      if ((smartGun.db)->count() < ENTRY_COUNT) {
+//        appendEntry((smartGun.db)->count()+1, nameGen((smartGun.db)->count()+1), uid);
+//        Serial.println((smartGun.db)->count());
+//       }
 
       // check for the presence of the shield:
       if (WiFi.status() == WL_NO_SHIELD) {
@@ -276,7 +279,7 @@ void loop(void) {
         return 0;
       }
 
-      reqHandle(newUsrNm);
+      reqHandle(newUsrNm, uid, uidLength);
       
       // if the server's disconnected, stop the client:
       if (!client.connected()) {
@@ -295,7 +298,7 @@ void loop(void) {
     }
     
     Serial.flush();
-    sysRestart(); //restart the system, use if wifi back to nfc is giving you trouble
+    //sysRestart(); //restart the system, use if wifi back to nfc is giving you trouble
   }
 }
 
@@ -433,13 +436,9 @@ uint8_t getNewTagName(char* newUsrNm) {
       }
     }while (client.available());
     wdt_reset();
-    Serial.println("DONE");
     wdt_disable();
     client.print("NEW");
-    client.flush();
     Serial.println(newUsrNm);
-    Serial.flush();
-    readNewTag(newUsrNm);
     return 1;
   } else {
     Serial.println("Smartgun not connected!");
@@ -448,12 +447,10 @@ uint8_t getNewTagName(char* newUsrNm) {
   }
 }
 
-void readNewTag(char* newUsrNm) {
+void readNewTag(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
   uint8_t success;
-  uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
-  uint8_t uidLength;
 
-  Serial.println("\nWaiting for an ISO14443A Card ...");
+  Serial.println("Waiting for an ISO14443A Card ...");
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
   //search through database to see if tag is already in there
   if(!tagSearch(uid)) {
@@ -471,7 +468,7 @@ void readNewTag(char* newUsrNm) {
 }
 
 //recieves request from database about which data to send
-void reqHandle(char* newUsrNm) {
+void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
   wdt_enable(WDTO_8S);
  Serial.println("waiting for request");
   while(!client.available());
@@ -487,6 +484,8 @@ void reqHandle(char* newUsrNm) {
       break;
     case 'N':
       getNewTagName(newUsrNm);
+      client.stop();
+      readNewTag(newUsrNm, uid, uidLength);
       break;
     default:
       Serial.println("INVALID REQUEST");
