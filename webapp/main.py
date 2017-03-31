@@ -20,7 +20,7 @@ port = 10001
 
 #Open db connection
 
-db = MySQLdb.connect("localhost","root","password","py")
+db = MySQLdb.connect("localhost","SGDAdmin","password","WEBAPP")
 
 #prepare cursor object
 cursor = db.cursor()
@@ -71,8 +71,6 @@ def home():
 	return render_template('homepage.html')
 
 
-
-
 #stuff for new tag input
 @app.route('/tagInput', methods=['POST','GET'])
 def tagInput():
@@ -88,12 +86,12 @@ def newTagRequest():
 def tagCheck():
 
 	print("Registering new tag")
-
-	serversocket = openSocket()
-	newRequest, clientsocket = readRequest(serversocket)
-
 	username = session.get('newName', None)
 
+	serversocket = openSocket()
+	newRequest, clientsocket = readRequest(serversocket, username)
+
+	
 	if newRequest: #if it is a new request
 		print("Write Back Function")
 		print("Writing to Socket...")
@@ -125,13 +123,16 @@ def openSocket():
 
 	return serversocket
 
-def readRequest(serversocket):
+def readRequest(serversocket, username):
 	print("Read request function")
 	data = ""
+	request = "N" + username
 
 	print("Searching for new tags...")
 	clientsocket,addr = serversocket.accept()
 	print("Got a connection from %s" % str(addr))
+
+	clientsocket.send(request)
 
 	data += clientsocket.recv(1024)#we only need to read once
 
