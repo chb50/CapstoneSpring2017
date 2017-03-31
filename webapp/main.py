@@ -179,6 +179,7 @@ def logout():
 	return render_template('login.html')
 
 
+#this does the check for the one time key
 @app.route('/nonce')
 def nonceMain():
 
