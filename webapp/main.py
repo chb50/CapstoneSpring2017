@@ -20,7 +20,7 @@ port = 10001
 
 #Open db connection
 
-db = MySQLdb.connect("localhost","root","slayer","py")
+db = MySQLdb.connect("localhost","root","password","py")
 
 #prepare cursor object
 cursor = db.cursor()
@@ -223,7 +223,7 @@ def compareKey(key):
 
 
 #reading from and displaying the database
-@app.route("/sgddatabase")
+@app.route("/sgddatabase", methods=['GET','POST'])
 def sgdb():
 	results = connection()
 
