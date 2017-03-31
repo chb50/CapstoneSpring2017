@@ -151,11 +151,11 @@ def login():
 	cursor.execute(sqllog)
 	data = cursor.fetchone()
 	if data is None:
-		return "Username or Password is invalid."
+		return render_template('login.html')
 	else:
 		session['logged_in'] = True
 		flash('Successfully logged in.')
-		return render_template('homepage.html')
+		return render_template('welcome_new.html')
 
 @app.route('/logout', methods=['POST','GET'])
 @login_required
