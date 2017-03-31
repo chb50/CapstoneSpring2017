@@ -16,7 +16,7 @@ hashgun = Hashing(app)
 # config
 app.secret_key = os.urandom(11)
 
-port = 10001
+port = 12000
 
 #Open db connection
 
@@ -70,7 +70,9 @@ def login_required(f):
 def home():
 	return render_template('homepage.html')
 
-
+@app.route('/Back2Welcome', methods=['GET', 'POST'])
+def Back2Welcome():
+	return render_template('welcome_new.html')
 
 
 #stuff for new tag input
