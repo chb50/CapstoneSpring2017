@@ -70,26 +70,33 @@ def login_required(f):
 def home():
 	return render_template('homepage.html')
 
-#This welcome page is currently being used for adding a new tag
-@app.route('/welcome',methods = ['POST','GET']) #add post and get methods to make sure
-def welcome():
+
+
+
+#stuff for new tag input
+@app.route('/tagInput', methods=['POST','GET'])
+def tag_input():
+	return render_template('addTag.html')
+
+@app.route('/newTagRequest', methods=['POST','GET'])
+def newTagRequest():
+	name = request.form['name']
+	session['newName'] = name
+	return redirect(url_for('tagCheck'))
+
+@app.route('/tagCheck',methods = ['POST','GET']) #add post and get methods to make sure
+def tagCheck():
 
 	serversocket = openSocket()
 	newRequest, clientsocket = readRequest(serversocket)
 
-	print clientsocket
-
-	test = 1
-	nameid = request.form.get("name2")
-
-	#test value for now
-	nameid = "TESTVALUE\0"
+	username = session.get('newName', None)
 
 	if newRequest: #if it is a new request
 		print("Write Back Function")
 		print("Writing to Socket...")
 		print(clientsocket)
-		err = clientsocket.send(nameid)
+		err = clientsocket.send(username)
 		if(err != -1):
 			print("Write Successful")
 			clientsocket.close()
