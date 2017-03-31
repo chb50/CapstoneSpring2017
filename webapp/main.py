@@ -20,7 +20,7 @@ port = 10001
 
 #Open db connection
 
-db = MySQLdb.connect("localhost","root","password","py")
+db = MySQLdb.connect("localhost","root","slayer","py")
 
 #prepare cursor object
 cursor = db.cursor()
