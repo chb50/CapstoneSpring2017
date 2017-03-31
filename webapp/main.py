@@ -75,7 +75,7 @@ def home():
 
 #stuff for new tag input
 @app.route('/tagInput', methods=['POST','GET'])
-def tag_input():
+def tagInput():
 	return render_template('addTag.html')
 
 @app.route('/newTagRequest', methods=['POST','GET'])
@@ -86,6 +86,8 @@ def newTagRequest():
 
 @app.route('/tagCheck',methods = ['POST','GET']) #add post and get methods to make sure
 def tagCheck():
+
+	print("Registering new tag")
 
 	serversocket = openSocket()
 	newRequest, clientsocket = readRequest(serversocket)
@@ -175,6 +177,8 @@ def logout():
 @app.route('/nonce')
 def nonceMain():
 
+	print("Checking one time key")
+
 	inputKey = session.get('oneTimeKey', None)
 
 	# inkey = "SGD:OFPKLXMPWRG"
@@ -230,8 +234,11 @@ def compareKey(key):
 
 
 #reading from and displaying the database
-@app.route("/sgddatabase", methods=['GET','POST'])
+@app.route("/sgdb", methods=['GET','POST'])
 def sgdb():
+
+	print("Connecting to sgdb")
+
 	results = connection()
 
 	table = [] 
