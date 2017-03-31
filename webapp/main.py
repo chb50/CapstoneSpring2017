@@ -16,7 +16,7 @@ hashgun = Hashing(app)
 # config
 app.secret_key = os.urandom(11)
 
-port = 12000
+port = 10001
 
 #Open db connection
 
@@ -70,13 +70,9 @@ def login_required(f):
 def home():
 	return render_template('homepage.html')
 
-<<<<<<< HEAD
-=======
 @app.route('/Back2Welcome', methods=['GET', 'POST'])
 def Back2Welcome():
 	return render_template('welcome_new.html')
-
->>>>>>> 489761177584eb9a38fc4ba7b263286c4bd1d229
 
 #stuff for new tag input
 @app.route('/tagInput', methods=['POST','GET'])
@@ -112,12 +108,13 @@ def tagCheck():
 			clientsocket.close()
 	serversocket.close()
 	
-	return render_template("database3.html",test = newRequest)
+	return redirect(url_for('sgdb'))
 
 def openSocket():
 	print("Open Socket Function")
 		# create a socket object
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 	# universal name
 	host = '0.0.0.0';                                                    
@@ -205,7 +202,8 @@ def compareKey(key):
 	print("Input value = " + key)
 	request = "O" #this is the request for the one time key
 		# create a socket object
-	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
 
 	# universal name
 	host = '0.0.0.0';                                                    
@@ -263,11 +261,11 @@ def sgdb():
 def connection():
 	print("Running connection")
 		# create a socket object
-	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
 
 	# universal name
-	host = '0.0.0.0';                       
-	port = 10001                                       
+	host = '0.0.0.0';                                                            
 
 	# bind to the port
 	serversocket.bind((host, port))                                  
