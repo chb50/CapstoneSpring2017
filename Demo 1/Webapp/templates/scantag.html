@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- <script src="jquery.min.js"></script> -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<!-- <script type="text/javascript" src="js/jquery.min.js"></script> -->
+<script>
+
+function doom()
+{
+if({{test}} == 1){
+document.getElementById("demo").innerHTML = "new tag";
+}
+else{
+document.getElementById("demo").innerHTML = "Nold";
+document.getElementById("ninjabutton").style.display ='none';
+}
+
+
+
+
+
+
+}
+
+function read1()
+{
+name1 = prompt("please enter SgID")
+if(name1 != null)
+{
+	$(document).ready(function(){document.append("name2");});
+	$.post("/welcome",{"sgid2":name1})
+
+
+
+}
+}
+
+
+
+var outputText = ""; 
+var initialLength = '{{length}}';
+var test = {{test}};
+
+window.onload = read1;
+
+
+
+
+
+</script>
+</head>
+<body>
+
+<p>Input SG ID</p>
+
+
+
+
+
+</body>
+</html>
