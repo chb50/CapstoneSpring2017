@@ -74,7 +74,6 @@ def home():
 def Back2Welcome():
 	return render_template('welcome_new.html')
 
-
 #stuff for new tag input
 @app.route('/tagInput', methods=['POST','GET'])
 def tagInput():
