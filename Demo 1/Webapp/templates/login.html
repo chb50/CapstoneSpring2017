@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1> Smart-Gun Login </h1>
+<p> Welcome to the login page for your Smart-Gun. </p>
+
+</body>
+
+<form name="login" action="/login"  method="post">
+
+	<fieldset>
+		<legend>Login information</legend>
+		Username: <br>
+		<input type="text" name="loguser" required> <br><br>
+
+		Password: <br>
+		<input type="password" name="logpass" required> <br> <br>
+
+		<input type="submit" value="Login"
+	</fieldset>
+
+</form>
+
+<!--<script language=javascript>
+function formValidation()
+{
+	var user_field = document.forms["login"]["username"].value;
+	var pass_field = document.forms["login"]["password"].value;
+	
+	if (user_field == "" && pass_field == "")
+	{
+		alert("Please fill out username and password fields.");
+		return false;
+	}
+	
+	else if (user_field == "")
+	{
+		alert("Please fill out username field.");
+		return false;
+	}
+	
+	else if (pass_field == "")
+	{
+		alert("Please fill out password field.");
+		return false;
+	}
+}
+</script>
+-->
+</html>

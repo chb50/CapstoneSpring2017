@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- <script src="jquery.min.js"></script> -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<!-- <script type="text/javascript" src="js/jquery.min.js"></script> -->
+<script>
+
+function doom()
+{
+if({{test}} == 1){
+document.getElementById("demo").innerHTML = "new tag";
+}
+else{
+document.getElementById("demo").innerHTML = "Nold";
+document.getElementById("ninjabutton").style.display ='none';
+}
+
+
+
+
+
+
+}
+
+function read1()
+{
+name1 = prompt("please enter tag")
+if(name1 != null)
+{
+	document.getElementById("outname").innerHTML = "we got it";
+	$(document).ready(function(){document.append("name2");});
+	$.post("/welcome",{"name2":name1})
+
+
+
+}
+}
+
+
+
+window.onload = doom;
+
+
+
+
+
+</script>
+</head>
+<body>
+
+<p>Smart Gun DB</p>
+<p id = "demo"></p>
+<p id = "hi"></p>
+<p id = "outname"></p>
+<button  id = "ninjabutton" onclick ="read1()">please press button to enter id</button>
+
+
+
+
+</body>
+</html>

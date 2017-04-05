@@ -1,16 +1,22 @@
 from flask import Flask, render_template
 import os, sys, socket
 from flask_mysqldb import MySQL
-import socket                                         
-import time
+import socket, time
+import threading
 
 app = Flask(__name__)
 
-# 1) Open a new page that will take in input that a new tag needs to be registered
-# 2) In the input field, input the name to be associated with the new tag and press "add new tag button"
-# 3) Will send the request "N'name'"
-# 4) Will receive confirmation from the client that tag had been registered or not
-# 5) Notify user of the registration status
+#class for threads
+class new_thread (threading.Thread):
+    def __init__(self, threadID, name):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+    def run(self):
+        print "Starting " + self.name
+        print_time(self.name, self.counter, 5)
+        print "Exiting " + self.name
+
 
 @app.route("/")
 def main():
@@ -20,23 +26,7 @@ def main():
 	return render_template("request.html", request=request)
 
 
-def runConnection():
-	print("Running Connection")
-	name = "Dickling" #make sure to append the termination character
-	request = "N" + name
-		# create a socket object
-	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-
-	# universal name
-	host = '0.0.0.0';                       
-	port = 10000                                   
-
-	# bind to the port
-	serversocket.bind((host, port))                                  
-
-	# queue up to 5 requests
-	serversocket.listen(5)                                           
-
+def runConnection():                                       
 	data = ""
 
 	while True: #accepting loop
@@ -64,4 +54,22 @@ def runConnection():
 	
 
 if __name__ == "__main__":
+	print("Running Connection")
+	name = "Cuck++" #make sure to append the termination character
+	request = "N" + name
+		# create a socket object
+	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+
+	# universal name
+	host = '0.0.0.0';                       
+	port = 10000                                   
+
+	# bind to the port
+	serversocket.bind((host, port))                                  
+
+	# queue up to 5 requests
+	serversocket.listen(5)    
+
+	
+	# socketThread = new_thread(1, "Socket Thread")
 	app.run(debug = True)
