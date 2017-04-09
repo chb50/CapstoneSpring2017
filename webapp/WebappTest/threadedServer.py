@@ -28,35 +28,26 @@ class new_thread (threading.Thread):
 
 # This is what the thread is running in parallel with the program
 def runConnection(threadName):
-	print "-" * 15
-	print("Running Connection")
-	print "-" * 15
+	print "-" * 20
+	print("Running Socket Thread")
+	print "-" * 20
+
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-	# try:
-	# 	serversocket.bind((host, port))                                  
-	# except socket.error as msg:
-	# 	serversocket.bind((host, port+1))                                  
-
-
+	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)                             
 	serversocket.bind((host, port))                                  
 	serversocket.listen(5) 
 
 	global request
 	request = None
 
-	print "Waiting for request"
 	while True: #accepting loop
+		print "Waiting for request..."
 		while True:
 			if(request != None):
-				print "Received a Request!!!"
+				print "Received a Request!!! [%s]" % request
 				break
 			time.sleep(0.25)
 			
-		print "----------------------------------------"
-		print request
-		print "----------------------------------------"
 		print("Searching for Connection...")
 		clientsocket,addr = serversocket.accept()
 		print("Got a connection from %s" % str(addr))
@@ -89,8 +80,6 @@ def database():
 
 @app.route("/", methods=['POST','GET'])
 def main():
-	global request 
-	request = None
 	return render_template("mainPage.html")
  
 
