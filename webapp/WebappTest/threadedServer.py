@@ -1,6 +1,5 @@
 from flask import Flask, render_template
 import os, sys, socket
-from flask_mysqldb import MySQL
 import socket, time
 import threading
 
@@ -8,7 +7,7 @@ app = Flask(__name__)
 	
 # universal name
 host = '0.0.0.0';                       
-port = 10001                           
+port = 10000                           
 
 request = None
 #Prototype of the threaded version is now working
@@ -27,10 +26,17 @@ class new_thread (threading.Thread):
 
 # This is what the thread is running in parallel with the program
 def runConnection(threadName):
-
+	print "-" * 15
 	print("Running Connection")
+	print "-" * 15
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+	# try:
+	# 	serversocket.bind((host, port))                                  
+	# except socket.error as msg:
+	# 	serversocket.bind((host, port+1))                                  
+
 
 	serversocket.bind((host, port))                                  
 	serversocket.listen(5) 
@@ -38,9 +44,11 @@ def runConnection(threadName):
 	global request
 	request = None
 
+	print "Waiting for request"
 	while True: #accepting loop
 		while True:
 			if(request != None):
+				print "Received a Request!!!"
 				break
 			time.sleep(0.25)
 			
@@ -90,4 +98,4 @@ if __name__ == "__main__":
 	socketThread = new_thread(1, "Socket Thread")
 	socketThread.start()
 
-	app.run(debug = True)
+	app.run()

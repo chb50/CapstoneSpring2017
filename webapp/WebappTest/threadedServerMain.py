@@ -1,6 +1,5 @@
 from flask import Flask, render_template
 import os, sys, socket
-from flask_mysqldb import MySQL
 import socket, time
 import threading
 
