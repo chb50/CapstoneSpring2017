@@ -8,6 +8,7 @@ HOST = '0.0.0.0'
 PORT = 10000
 
 exitFlag = 0
+
 request = None
 
 class ThreadedServer(threading.Thread):
@@ -32,7 +33,7 @@ class ThreadedServer(threading.Thread):
             while True:
                 if(request != None):
                     break
-            time.sleep(0.25)
+                time.sleep(0.25)
 
             print "Request Received\nWaiting for Connection..."
             client, address = self.sock.accept()
@@ -75,18 +76,15 @@ class newThread (threading.Thread):
 def print_time(threadName, delay):
     while True:
         if request == "O":
-            print "Request is now =", request
+            print "Thread 1 Request is now =", request
             break
         time.sleep(delay)
         print "%s: %s" % (threadName, time.ctime(time.time()))
 
 def wait_time(threadName):
-    global request
-    request = None
-
     while True:
         if(request != None):
-            print request
+            print "Thread 2 request is now", request
             break
         print request
         time.sleep(0.25)
