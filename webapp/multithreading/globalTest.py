@@ -8,8 +8,9 @@ HOST = '0.0.0.0'
 PORT = 10000
 
 exitFlag = 0
-
 request = None
+
+#This works as expected
 
 class ThreadedServer(threading.Thread):
     def __init__(self, host, port):
