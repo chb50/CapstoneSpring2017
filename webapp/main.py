@@ -5,7 +5,7 @@ import os
 from functools import wraps
 import MySQLdb
 from flask.ext.hashing import Hashing
-import socket
+import socket, threading, time
 
 #create app object
 app = Flask(__name__)
@@ -16,10 +16,11 @@ hashgun = Hashing(app)
 # config
 app.secret_key = os.urandom(11)
 
-port = 10001
+# host and port for the socket
+host = '0.0.0.0'
+port = 10000
 
 #Open db connection
-
 db = MySQLdb.connect("localhost","SGDAdmin","password","WEBAPP")
 
 #prepare cursor object
@@ -33,6 +34,125 @@ data = cursor.fetchall()
 
 print "Database version: %s " % data
 print "Database connection successful!"
+
+# --------------------------------------------------
+#Thread Stuff
+
+webapp_request = None
+returnFlag = False
+inputKey = None
+check = False
+results = []
+tableSGDB = []
+
+# class for threads
+class New_thread (threading.Thread):
+    def __init__(self, name):
+        threading.Thread.__init__(self)
+        self.name = name
+    def run(self):
+        print "Starting " + self.name
+        runConnection(self.name)
+        print "Exiting " + self.name
+
+
+# This is what the thread is running in parallel with the program
+def runConnection(threadName):
+	print "-" * 20
+	print("Running Socket Thread")
+	print "-" * 20
+
+	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)                             
+	serversocket.bind((host, port))                                  
+	serversocket.listen(5) 
+
+	data = ""
+
+	global returnFlag
+	global webapp_request
+	global inputKey
+	global check
+	global results 
+	webapp_request = None
+
+	while True: #accepting loop
+		print "Waiting for request..."
+		while True:
+			if(webapp_request != None):
+				print "Received a Request!!! [%s]" % webapp_request
+				break
+			time.sleep(0.25)
+			
+		print("Searching for Connection...")
+		clientsocket,addr = serversocket.accept()
+		print("Got a connection from %s" % str(addr))
+
+		err = clientsocket.send(webapp_request)
+		print "Request Sent"
+
+		# If web app sends a new user request
+		if (webapp_request[0] == "N"):
+			data += clientsocket.recv(1024)#we only need to read once
+			end = data.find("NEW")
+			if end != -1:
+				if(err != -1):
+					print("New User Added!")
+					clientsocket.close()
+				else:
+					print("Writing Error in new user")
+					clientsocket.close()
+			else:
+				print "Incoming data does not contain NEW!"
+
+		#If webapp sends a one time key request
+		elif (webapp_request[0] == "O"):
+			print("Waiting to Receive data...")
+			data += clientsocket.recv(1024)
+			print("Data Received, Comparing...")
+			while (inputKey == None):
+				time.sleep(1)
+
+			print "Comparing keys"
+			if(data == inputKey):
+				print("Keys Match!")
+				check = True
+			else:
+				print("Invalid input")
+				check = False
+
+		#If the webapp sends a database request
+		elif(webapp_request[0] == "D"):
+			i = 0
+			while True: #reading loop
+				data += clientsocket.recv(1024)#read once
+
+				if i == 0: #if it is the first read, check for correct starting token
+					z = data.find("SGD:") #detect starting token
+					if z == -1: #if no starting token found, break connection
+						print("NO STARTING KEY FOUND")
+						break
+
+				end = data.find("SGD:END") #if the final end token is detected, break
+				if end != -1:
+					#This is where we end
+					break
+
+				r = data.find("\r\n")#detect ending line token
+				if r != -1:# if ending line token is detected
+					i = i+1 # increment index
+					results.append(data) # add the data to the table
+					data = "" # empty the data buffer
+
+		#Empty the request buffer and data buffer
+		time.sleep(1)
+		webapp_request = None
+		data = ""
+		returnFlag = True
+
+		clientsocket.close()
+	serversocket.close()
+# ---------------------------------------------------
 
 #sgd packet class from hello3
 class sgdPacket():
@@ -85,71 +205,90 @@ def newTagRequest():
 	session['newName'] = name
 	return redirect(url_for('tagCheck'))
 
+
+# -------------------Working on modifying with parallel thread--------------
+#This is currenty working as intended with the socket thread
 @app.route('/tagCheck',methods = ['POST','GET']) #add post and get methods to make sure
 def tagCheck():
+	global webapp_request
+	global returnFlag
+
+	if returnFlag:
+		returnFlag = False
+		print "Redirecting to sgdb"
+		return redirect(url_for('sgdb'))
 
 	print("Registering new tag")
 	username = session.get('newName', None)
 
-	serversocket = openSocket()
-	newRequest, clientsocket = readRequest(serversocket, username)
+	webapp_request = "N" + username
 
+	time.sleep(10) #Not the most efficient way, but it works for now
 	
-	if newRequest: #if it is a new request
-		print("Write Back Function")
-		print("Writing to Socket...")
-		print(clientsocket)
-		err = clientsocket.send(username)
-		if(err != -1):
-			print("Write Successful")
-			clientsocket.close()
-		else:
-			print("Writing Error")
-			clientsocket.close()
-	serversocket.close()
-	
-	return redirect(url_for('sgdb'))
+	return redirect(url_for('tagCheck'))
+# ---------------------------------------------------------------------------
 
-def openSocket():
-	print("Open Socket Function")
-		# create a socket object
-	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+# -------------------Working on modifying with parallel thread--------------
+#this does the check for the one time key
+# This is currently working as intended
+@app.route('/nonce')
+def nonceMain():
 
-	# universal name
-	host = '0.0.0.0';                                                    
+	global webapp_request
+	global returnFlag
+	global check
+	global inputKey
 
-	# bind to the port
-	serversocket.bind((host, port))                                  
+	if (returnFlag and check):
+		returnFlag = False
+		check = False
+		print "Redirecting to sgdb"
+		return redirect(url_for('sgdb'))
+	elif (returnFlag and not check):
+		returnFlag = False
+		print "Redirecting to user page"
+		return redirect(url_for('home'))
 
-	# queue up to 5 requests
-	serversocket.listen(5)
+	webapp_request = "O"
+	inputKey = session.get('oneTimeKey', None)
 
-	return serversocket
+	time.sleep(10)
 
-def readRequest(serversocket, username):
-	print("Read request function")
-	data = ""
-	request = "N" + username
+	return redirect(url_for('nonceMain'))
 
-	print("Searching for new tags...")
-	clientsocket,addr = serversocket.accept()
-	print("Got a connection from %s" % str(addr))
+# -------------------------------------------------------------------------
 
-	clientsocket.send(request)
+# -------------------Working on modifying with parallel thread--------------
+#Has not yet been tested, but should be working
+#reading from and displaying the database
+@app.route("/sgdb", methods=['GET','POST'])
+def sgdb():
 
-	data += clientsocket.recv(1024)#we only need to read once
+	global webapp_request
+	global returnFlag
+	global results
+	global tableSGDB
 
-	end = data.find("NEW")
-	if end != -1:
-		return True, clientsocket
+	if returnFlag:
+		return render_template("databasesgd.html", table=tableSGDB, length=len(results))
 	else:
-		clientsocket.close()
-		serversocket.close()
-		return False, 0
-	
-# route for handling the login page logic
+		time.sleep(5)
 
+	webapp_request = "D"
+	print("Connecting to sgdb...")
+	time.sleep(10)
+
+	for i in range(0,len(results)):
+		tableSGDB.append(results[i])
+
+	for i in range(len(results)-1, 11):
+		tableSGDB.append(" ")
+	print tableSGDB
+
+	return redirect(url_for('sgdb'))
+# -------------------------------------------------------------------------
+
+# route for handling the login page logic
 @app.route('/login_load', methods=['POST','GET'])
 def login_load():
 	return render_template('login.html')
@@ -177,139 +316,6 @@ def logout():
 	session.pop('logged_in', None)
 	flash('Successfully logged out.')
 	return render_template('login.html')
-
-
-#this does the check for the one time key
-@app.route('/nonce')
-def nonceMain():
-
-	print("Checking one time key")
-
-	inputKey = session.get('oneTimeKey', None)
-
-	# inkey = "SGD:OFPKLXMPWRG"
-	check = compareKey(inputKey)
-
-	print check
-
-	if check:
-		return redirect(url_for('sgdb'))
-	else:
-		return redirect(url_for('home'))
-
-
-def compareKey(key):
-	print("Open Socket for One Time Key")
-	print("Input value = " + key)
-	request = "O" #this is the request for the one time key
-		# create a socket object
-	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
-
-	# universal name
-	host = '0.0.0.0';                                                    
-
-	# bind to the port
-	serversocket.bind((host, port))                                  
-
-	# queue up to 5 requests
-	serversocket.listen(5)
-
-	data = ""
-
-	print("Searching for connection...")
-	clientsocket,addr = serversocket.accept()
-	print("Got a connection from %s" % str(addr))
-
-	print("Request Sent")
-	clientsocket.send(request)
-
-	print("Waiting to Receive data...")
-	data += clientsocket.recv(1024)
-
-	print("Data Received, Comparing...")
-	if(data == key):
-		print("Keys Match!")
-		clientsocket.close()
-		serversocket.close()
-		return True
-	else:
-		print("Invalid input")
-		clientsocket.close()
-		serversocket.close()
-		return False
-
-
-#reading from and displaying the database
-@app.route("/sgdb", methods=['GET','POST'])
-def sgdb():
-
-	print("Connecting to sgdb")
-
-	results = connection()
-
-	table = [] 
-
-	for i in range(0,len(results)):
-		table.append(results[i])
-
-	for i in range(len(results)-1, 11):
-		table.append(" ")
-	print table
-
-	return render_template("databasesgd.html", table=table, length=len(results))
-
-def connection():
-	print("Running connection")
-		# create a socket object
-	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
-
-	# universal name
-	host = '0.0.0.0';                                                            
-
-	# bind to the port
-	serversocket.bind((host, port))                                  
-
-	# queue up to 5 requests
-	serversocket.listen(5)                                           
-
-	data = ""
-	i = 0
-	table = []
-
-	request = "D" #This tell the arduino that we want the database
-
-	while True: #accpeting loop
-	    # establish a connection
-		print("Waiting for connection...")
-		clientsocket,addr = serversocket.accept()
-		print("Got a connection from %s" % str(addr))
-
-		clientsocket.send(request)
-
-		while True: #reading loop
-			data += clientsocket.recv(1024)#read once
-
-			if i == 0: #if it is the first read, check for correct starting token
-				z = data.find("SGD:") #detect starting token
-				if z == -1: #if no starting token found, break connection
-					print("NO STARTING KEY FOUND")
-					break
-
-			end = data.find("SGD:END") #if the final end token is detected, break
-			if end != -1:
-				serversocket.close()
-				clientsocket.close()
-				return table
-
-			r = data.find("\r\n")#detect ending line token
-			if r != -1:# if ending line token is detected
-				i = i+1 # increment index
-				table.append(data) # add the data to the table
-				data = "" # empty the data buffer
-	clientsocket.close()
-
 
 @app.route('/authorization_load', methods=['POST','GET'])
 def authorization_load():
@@ -352,6 +358,13 @@ def DeviceAuthorization():
 		tbl = tbl + "</tr>"
 	return "<html><body>" + tbl + "</body></html>"
 
+
+
 # start the server with the 'run()' method
+# debug causes multiple threads to run, giving an error in the socket connection
 if __name__ == '__main__':
-	app.run(debug=True)
+
+	socket_thread = New_thread("Socket Thread")
+	socket_thread.start()
+
+	app.run()
