@@ -1,8 +1,19 @@
+/* WRITTEN BY: Cedric Blake
+ *  
+ *  This script uses external libraries libraries:
+ *  
+ *  SGD
+ *  EDB
+ *  Adafruit pn532 (nfc library)
+ *  
+ *  will need to download these if you want script to work
+ */
+
+
 /* DEBUGGING NOTES
  *  
  *  make sure to not use too many serial print statements, as they take space in ram and may lead to unexpected results in code
  */
-
 
 // NTAG2x3 cards have 39*4 bytes of user pages (156 user bytes),
 // starting at page 4 ... larger cards just add pages to the end of
@@ -42,6 +53,10 @@
 #define MEGA_RST 46
 #define MEGA_WAKE 41
 #define PORT 10000
+
+//for NFC
+#define T_OUT_1 1000
+#define T_OUT_10 10000
 
 struct entry {
   //800 bytes for 10 entries
@@ -107,7 +122,7 @@ IPAddress server(192,168,1,164);  // numeric IP for Google (no DNS)
 WiFiClient client;
 
 void setup(void) {
-  Serial.begin(9600);
+  Serial.begin(9600); //TODO: change to 115200 for final product
   while (!Serial);
   Serial.println("Hello!");
 
@@ -116,7 +131,7 @@ void setup(void) {
 
   randomSeed(analogRead(0));
   //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
-//  deleteAll(); //for testing
+  deleteAll(); //for testing
 //  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
   // create table at with starting address 0
   if(db.open(DB_START) != EDB_OK) { 
@@ -178,16 +193,16 @@ void loop(void) {
 
   //NOTE: need this print to store and hold the username on the database
   //WATCH OUT FOR THIS, it may give bugs if we try to add multiple tags
-  Serial.print(newUsrNm);
-  Serial.println("\nTime to change mode!");
-  delay(5000);
+  //Serial.print(newUsrNm);
+//  Serial.println("\nTime to change mode!");
+//  delay(5000);
 
   if(digitalRead(MODE) == LOW) { //then we are not in wifi mode
     
     Serial.println("FIRING MODE ACTIVE");
 
     Serial.println("\nWaiting for an ISO14443A Card ...");
-    success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+    success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, T_OUT_1);
         
     if (success) {
       // Display some basic information about the card
@@ -199,6 +214,7 @@ void loop(void) {
       {
         //search db for tag here
 //        //add nfc tag to database (for testing)
+        //NOTE: the simulation is able to retain info even after system shutdown. may wanna try dealing with the name problem first
 //        if (db.count() < ENTRY_COUNT) {
 //          appendEntry(db.count()+1, nameGen(db.count()+1), uid);
 //          Serial.println(db.count());
@@ -243,7 +259,7 @@ void loop(void) {
       digitalWrite(MEGA_WAKE, HIGH);
 
       Serial.println("WIFI MODE ACTIVE");
-      deleteAll();
+      //deleteAll();
       
 //      //add nfc tag to database (for testing)
 //      if (db.count() < ENTRY_COUNT) {
@@ -302,7 +318,7 @@ void loop(void) {
     Serial.flush();
     //sysRestart(); //restart the system, use if wifi back to nfc is giving you trouble
   }
-}
+} /*** END OF LOOP ***/
 
 //custom functions
 
@@ -319,6 +335,7 @@ int dbCount() {
   return db.count();
 }
 
+//prints out the database
 void dbPrint() {
   Serial.println("Printing database");
   for(int i = 1; i <= db.count(); ++i) {
@@ -339,12 +356,21 @@ void dbPrint() {
   }
 }
 
+//add an entry to the database
 void appendEntry(int id, char* userName, uint8_t* nfcTag)
 {
   Serial.print("Appending record...");
-  entry.id = id; 
-  entry.userName = userName;
-  entry.nfcTag = new uint8_t[7]; //dynamic alloc for copying value to database. DONT FORGET TO DELETE
+  entry.id = id;
+  entry.userName = new char[16];
+  for(int i = 0; i < strlen(userName)+1; i++) {
+    if(i < 16) { //make sure string is smaller than 16 bytes
+      entry.userName[i] = userName[i];
+    } else {
+      entry.userName[16] = '\0';
+      break;
+    }
+  }
+  entry.nfcTag = new uint8_t[7];
   for(int i = 0; i < 7; i++) {
     entry.nfcTag[i] = nfcTag[i];
   }
@@ -352,12 +378,14 @@ void appendEntry(int id, char* userName, uint8_t* nfcTag)
   if (result != EDB_OK) printError(result);
 }
 
+//remove all entries in database
 void deleteAll()
 {
   Serial.print("Truncating table...");
   for(int i = 1; i <= db.count(); ++i) {
     EDB_Status result = db.readRec(i, EDB_REC entry); //EDB_REC is the struct instance of an entry in the table
     if (result == EDB_OK) {
+      delete entry.userName;
       delete entry.nfcTag;
     }
     else printError(result);
@@ -365,17 +393,20 @@ void deleteAll()
   db.clear();
 }
 
+//delete a specified entry in the database
 void deleteEntry(int recno)
 {
   Serial.print("Deleting recno");
   EDB_Status result = db.readRec(recno, EDB_REC entry); //EDB_REC is the struct instance of an entry in the table
   if (result == EDB_OK) {
+    delete entry.userName;
     delete entry.nfcTag;
   }
   else printError(result);
   db.deleteRec(recno);
 }
 
+//search through database by tag number
 uint8_t tagSearch(uint8_t* uid) {
   for (int recno = 1; recno <= db.count(); recno++)
   {
@@ -400,6 +431,25 @@ uint8_t tagSearch(uint8_t* uid) {
   return 0;
 }
 
+//search through database by user name
+uint8_t nameSearch(char* userName) {
+  for (int recno = 1; recno <= db.count(); recno++)
+  {
+    EDB_Status result = db.readRec(recno, EDB_REC entry);
+    if (result == EDB_OK)
+    {
+      int match = 1;
+      if(!strcmp(userName, entry.userName)) {
+        return recno;
+      }
+    }
+    else printError(result);
+  }
+  Serial.println("ID not found!");
+  return 0;
+}
+
+//send one time id to web app
 void sendId() {
   if(smartGun.getFlags() & WIFI_CONN){
     Serial.println("Sending ID");
@@ -410,6 +460,7 @@ void sendId() {
 }
 
 //TODO: need to retest this
+//send database to web app for viewing
 void sendDb() {
   if (smartGun.getFlags() & WIFI_CONN) { //nfc craps out when we try to send information
     Serial.println("Sending DB info");
@@ -440,6 +491,7 @@ void sendDb() {
   }
 }
 
+//get a user name specified by the web app and store into local variable
 uint8_t getNewTagName(char* newUsrNm) {
   wdt_enable(WDTO_8S); //watchdog set to 8 sec for infinite loop in this function
   if(smartGun.getFlags() & WIFI_CONN) { //check to see if we connected to the webapp
@@ -470,6 +522,7 @@ uint8_t getNewTagName(char* newUsrNm) {
   }
 }
 
+//read a tag and store it to the database
 void readNewTag(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
   uint8_t success;
 
@@ -492,10 +545,10 @@ void readNewTag(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
 
 //recieves request from database about which data to send
 void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
-  wdt_enable(WDTO_8S);
- Serial.println("waiting for request");
+  //wdt_enable(WDTO_8S);
+  Serial.println("waiting for request");
   while(!client.available());
-  wdt_reset();
+  //wdt_reset();
 
   char c = client.read();
   switch (c) {
@@ -510,6 +563,10 @@ void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
       client.stop();
       readNewTag(newUsrNm, uid, uidLength);
       break;
+    case 'R':
+      getNewTagName(newUsrNm);
+      deleteEntry(nameSearch(newUsrNm));
+      break;
     default:
       Serial.println("INVALID REQUEST");
       break;
@@ -517,6 +574,7 @@ void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
   wdt_disable();
 }
 
+//print the database error if any
 void printError(EDB_Status err)
 {
   Serial.print("ERROR: ");
