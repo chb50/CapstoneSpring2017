@@ -23,8 +23,23 @@
 
 <p id = "table"></p>
 
+<br>
+
+Add or Remove Users here:
+
+<br><br>
+<form action="/addUser" method="POST">
+<input type="text" name="addUser" placeholder="Username" required>
+<button type=submit> Add New User </button>
+</form>
+<br><br>
+<form action="/removeUser" method="POST">
+<input type="text" name="removeUser" placeholder="Username" required>
+<button type=submit> Remove User </button>
+</form>
+<br><br>
 <form action="/Back2Welcome" method="POST">
-<button type=submit> Go Back to Welcome Page </button>
+<button type=submit> Go Back </button>
 </form>
 
 

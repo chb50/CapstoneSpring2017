@@ -259,6 +259,16 @@ def sgdb():
 
 	return render_template("databasesgd.html", table=table, length=len(results))
 
+#adding a new user to sgdb
+@app.route("/addUser", methods=['GET','POST'])
+def addUser():
+	addUser=request.form['addUser']
+
+#removing a user from sgdb
+@app.route("/removeUser", methods=['GET','POST'])
+def removeUser():
+	removeUser=request.form['removeUser']
+
 def connection():
 	print("Running connection")
 		# create a socket object
