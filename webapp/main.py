@@ -313,6 +313,17 @@ def sgdb():
 	print tableSGDB
 
 	return redirect(url_for('sgdb'))
+
+#adding a new user to sgdb
+@app.route("/addUser", methods=['GET','POST'])
+def addUser():
+	addUser=request.form['addUser']
+
+#removing a user from sgdb
+@app.route("/removeUser", methods=['GET','POST'])
+def removeUser():
+	removeUser=request.form['removeUser']
+
 # -------------------------------------------------------------------------
 
 # route for handling the login page logic
