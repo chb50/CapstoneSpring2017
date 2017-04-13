@@ -137,20 +137,26 @@ def runConnection(threadName):
 					z = data.find("SGD:") #detect starting token
 					if z == -1: #if no starting token found, break connection
 						print("NO STARTING KEY FOUND")
+						break
 
 				end = data.find("SGD:END") #if the final end token is detected, break
-				if end != -1:
+				if end == -1:
 					print "NO END TOKEN DETECTED!"
 					break
 
-				r = data.find("\r\n")#detect ending line token
-				if r != -1:# if ending line token is detected
-					i = i+1 # increment index
-					results.append(data) # add the data to the table
-					data = "" # empty the data buffer
+				results.append(data)
+				break
+				# r = data.find("\r\n")#detect ending line token
+				# if r != -1:# if ending line token is detected
+				# 	print "Appending"
+				# 	i = i+1 # increment index
+				# 	results.append(data) # add the data to the table
+				# 	data = "" # empty the data buffer
 
 		#Empty the request buffer and data buffer
 		print "Resetting All"
+		print "Results table = ",
+		print results
 		time.sleep(1)
 		webapp_request = None
 		data = ""
@@ -290,20 +296,21 @@ def sgdb():
 		returnFlag = False
 		results = []
 		mutex.release()
-		return render_template("databasesgd.html", table=tableSGDB, length=len(results))
+		return render_template("databasesgd.html", table=tableSGDB, length=len(tableSGDB))
 	else:
+		webapp_request = "D"
+
 		time.sleep(10)
 
-	webapp_request = "D"
+		print("Attempting to connect to sgdb...")
 
-	print("Attempting to connect to sgdb...")
+		for i in range(0,len(results)):
+			tableSGDB.append(results[i])
 
-	for i in range(0,len(results)):
-		tableSGDB.append(results[i])
-
-	for i in range(len(results)-1, 11):
-		tableSGDB.append(" ")
-	# print tableSGDB
+		for i in range(len(results)-1, 11):
+			tableSGDB.append(" ")
+	print "table = ",
+	print tableSGDB
 
 	return redirect(url_for('sgdb'))
 # -------------------------------------------------------------------------
@@ -337,152 +344,6 @@ def logout():
 	flash('Successfully logged out.')
 	return render_template('login.html')
 
-<<<<<<< HEAD
-
-#this does the check for the one time key
-@app.route('/nonce')
-def nonceMain():
-
-	print("Checking one time key")
-
-	inputKey = session.get('oneTimeKey', None)
-
-	# inkey = "SGD:OFPKLXMPWRG"
-	check = compareKey(inputKey)
-
-	print check
-
-	if check:
-		return redirect(url_for('sgdb'))
-	else:
-		return redirect(url_for('home'))
-
-
-def compareKey(key):
-	print("Open Socket for One Time Key")
-	print("Input value = " + key)
-	request = "O" #this is the request for the one time key
-		# create a socket object
-	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
-
-	# universal name
-	host = '0.0.0.0';                                                    
-
-	# bind to the port
-	serversocket.bind((host, port))                                  
-
-	# queue up to 5 requests
-	serversocket.listen(5)
-
-	data = ""
-
-	print("Searching for connection...")
-	clientsocket,addr = serversocket.accept()
-	print("Got a connection from %s" % str(addr))
-
-	print("Request Sent")
-	clientsocket.send(request)
-
-	print("Waiting to Receive data...")
-	data += clientsocket.recv(1024)
-
-	print("Data Received, Comparing...")
-	if(data == key):
-		print("Keys Match!")
-		clientsocket.close()
-		serversocket.close()
-		return True
-	else:
-		print("Invalid input")
-		clientsocket.close()
-		serversocket.close()
-		return False
-
-
-#reading from and displaying the database
-@app.route("/sgdb", methods=['GET','POST'])
-def sgdb():
-
-	print("Connecting to sgdb")
-
-	results = connection()
-
-	table = [] 
-
-	for i in range(0,len(results)):
-		table.append(results[i])
-
-	for i in range(len(results)-1, 11):
-		table.append(" ")
-	print table
-
-	return render_template("databasesgd.html", table=table, length=len(results))
-
-#adding a new user to sgdb
-@app.route("/addUser", methods=['GET','POST'])
-def addUser():
-	addUser=request.form['addUser']
-
-#removing a user from sgdb
-@app.route("/removeUser", methods=['GET','POST'])
-def removeUser():
-	removeUser=request.form['removeUser']
-
-def connection():
-	print("Running connection")
-		# create a socket object
-	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
-
-	# universal name
-	host = '0.0.0.0';                                                            
-
-	# bind to the port
-	serversocket.bind((host, port))                                  
-
-	# queue up to 5 requests
-	serversocket.listen(5)                                           
-
-	data = ""
-	i = 0
-	table = []
-
-	request = "D" #This tell the arduino that we want the database
-
-	while True: #accpeting loop
-	    # establish a connection
-		print("Waiting for connection...")
-		clientsocket,addr = serversocket.accept()
-		print("Got a connection from %s" % str(addr))
-
-		clientsocket.send(request)
-
-		while True: #reading loop
-			data += clientsocket.recv(1024)#read once
-
-			if i == 0: #if it is the first read, check for correct starting token
-				z = data.find("SGD:") #detect starting token
-				if z == -1: #if no starting token found, break connection
-					print("NO STARTING KEY FOUND")
-					break
-
-			end = data.find("SGD:END") #if the final end token is detected, break
-			if end != -1:
-				serversocket.close()
-				clientsocket.close()
-				return table
-
-			r = data.find("\r\n")#detect ending line token
-			if r != -1:# if ending line token is detected
-				i = i+1 # increment index
-				table.append(data) # add the data to the table
-				data = "" # empty the data buffer
-	clientsocket.close()
-
-
-=======
->>>>>>> 9f69621f8d0df908491faa99a2ae61c48caf87df
 @app.route('/authorization_load', methods=['POST','GET'])
 def authorization_load():
 	return render_template('authorization.html')
