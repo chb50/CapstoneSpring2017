@@ -6,17 +6,6 @@ import threading
 
 app = Flask(__name__)
 
-#class for threads
-class new_thread (threading.Thread):
-    def __init__(self, threadID, name):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.name = name
-    def run(self):
-        print "Starting " + self.name
-        print_time(self.name, self.counter, 5)
-        print "Exiting " + self.name
-
 
 @app.route("/")
 def main():
@@ -26,7 +15,24 @@ def main():
 	return render_template("request.html", request=request)
 
 
-def runConnection():                                       
+def runConnection():
+
+	print("Running Connection")
+	name = "Cuck++" #make sure to append the termination character
+	request = "N" + name
+		# create a socket object
+	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+
+	# universal name
+	host = '0.0.0.0';                       
+	port = 10001                                   
+
+	# bind to the port
+	serversocket.bind((host, port))                                  
+
+	# queue up to 5 requests
+	serversocket.listen(5)    
+
 	data = ""
 
 	while True: #accepting loop
@@ -54,22 +60,6 @@ def runConnection():
 	
 
 if __name__ == "__main__":
-	print("Running Connection")
-	name = "Cuck++" #make sure to append the termination character
-	request = "N" + name
-		# create a socket object
-	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
-	# universal name
-	host = '0.0.0.0';                       
-	port = 10000                                   
-
-	# bind to the port
-	serversocket.bind((host, port))                                  
-
-	# queue up to 5 requests
-	serversocket.listen(5)    
-
-	
 	# socketThread = new_thread(1, "Socket Thread")
 	app.run(debug = True)
