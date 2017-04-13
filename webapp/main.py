@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask import session, flash
 from flask import jsonify
-import os
+import os, sys
 from functools import wraps
 import MySQLdb
 from flask.ext.hashing import Hashing
 import socket, threading, time
+from threading import Lock
 
 #create app object
 app = Flask(__name__)
@@ -38,12 +39,14 @@ print "Database connection successful!"
 # --------------------------------------------------
 #Thread Stuff
 
+mutex = Lock()
 webapp_request = None
 returnFlag = False
 inputKey = None
 check = False
 results = []
 tableSGDB = []
+request_sent = False
 
 # class for threads
 class New_thread (threading.Thread):
@@ -124,18 +127,20 @@ def runConnection(threadName):
 		#If the webapp sends a database request
 		elif(webapp_request[0] == "D"):
 			i = 0
+			time.sleep(5)
 			while True: #reading loop
 				data += clientsocket.recv(1024)#read once
+
+				print data
 
 				if i == 0: #if it is the first read, check for correct starting token
 					z = data.find("SGD:") #detect starting token
 					if z == -1: #if no starting token found, break connection
 						print("NO STARTING KEY FOUND")
-						break
 
 				end = data.find("SGD:END") #if the final end token is detected, break
 				if end != -1:
-					#This is where we end
+					print "NO END TOKEN DETECTED!"
 					break
 
 				r = data.find("\r\n")#detect ending line token
@@ -145,10 +150,13 @@ def runConnection(threadName):
 					data = "" # empty the data buffer
 
 		#Empty the request buffer and data buffer
+		print "Resetting All"
 		time.sleep(1)
 		webapp_request = None
 		data = ""
+		mutex.acquire()
 		returnFlag = True
+		mutex.release()
 
 		clientsocket.close()
 	serversocket.close()
@@ -214,7 +222,9 @@ def tagCheck():
 	global returnFlag
 
 	if returnFlag:
+		mutex.acquire()
 		returnFlag = False
+		mutex.release()
 		print "Redirecting to sgdb"
 		return redirect(url_for('sgdb'))
 
@@ -240,12 +250,16 @@ def nonceMain():
 	global inputKey
 
 	if (returnFlag and check):
+		mutex.acquire()
 		returnFlag = False
 		check = False
+		mutex.release()
 		print "Redirecting to sgdb"
 		return redirect(url_for('sgdb'))
 	elif (returnFlag and not check):
+		mutex.acquire()
 		returnFlag = False
+		mutex.release()
 		print "Redirecting to user page"
 		return redirect(url_for('home'))
 
@@ -269,21 +283,27 @@ def sgdb():
 	global results
 	global tableSGDB
 
+	print "Return Flag = %r" % returnFlag
+
 	if returnFlag:
+		mutex.acquire()
+		returnFlag = False
+		results = []
+		mutex.release()
 		return render_template("databasesgd.html", table=tableSGDB, length=len(results))
 	else:
-		time.sleep(5)
+		time.sleep(10)
 
 	webapp_request = "D"
-	print("Connecting to sgdb...")
-	time.sleep(10)
+
+	print("Attempting to connect to sgdb...")
 
 	for i in range(0,len(results)):
 		tableSGDB.append(results[i])
 
 	for i in range(len(results)-1, 11):
 		tableSGDB.append(" ")
-	print tableSGDB
+	# print tableSGDB
 
 	return redirect(url_for('sgdb'))
 # -------------------------------------------------------------------------
@@ -361,7 +381,8 @@ def DeviceAuthorization():
 
 
 # start the server with the 'run()' method
-# debug causes multiple threads to run, giving an error in the socket connection
+# In debug mode, if there is a problem, the program restarts, this creates multiple threads that 
+# try to use the same port causing a socket error and preventing the program from running properly
 if __name__ == '__main__':
 
 	socket_thread = New_thread("Socket Thread")
