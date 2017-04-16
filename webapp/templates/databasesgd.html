@@ -10,29 +10,31 @@
 
 <p>Smart Gun DB</p>
 
-<p>{{table[1]}}</p>
-<p>{{table[2]}}</p>
-<p>{{table[3]}}</p>
-<p>{{table[4]}}</p>
-<p>{{table[5]}}</p>
-<p>{{table[6]}}</p>
-<p>{{table[7]}}</p>
-<p>{{table[8]}}</p>
-<p>{{table[9]}}</p>
-<p>{{table[10]}}</p>
+<!-- Start from 1 because the first element in the list is SGD -->
 
-<p id = "table"></p>
+<p>{{ tableSGDB[1] }}</p>
+<p>{{ tableSGDB[2] }}</p>
+<p>{{ tableSGDB[3] }}</p>
+<p>{{ tableSGDB[4] }}</p>
+<p>{{ tableSGDB[5] }}</p>
+<p>{{ tableSGDB[6] }}</p>
+<p>{{ tableSGDB[7] }}</p>
+<p>{{ tableSGDB[8] }}</p>
+<p>{{ tableSGDB[9] }}</p>
+<p>{{ tableSGDB[10] }}</p>
+
+<p id = "tableSGDB"></p>
 
 <br>
 
 Add or Remove Users here:
 
-<br><br>
+<br>
 <form action="/addUser" method="POST">
 <input type="text" name="addUser" placeholder="Username" required>
 <button type=submit> Add New User </button>
 </form>
-<br><br>
+<br>
 <form action="/removeUser" method="POST">
 <input type="text" name="removeUser" placeholder="Username" required>
 <button type=submit> Remove User </button>

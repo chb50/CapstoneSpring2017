@@ -1,9 +1,7 @@
 
-returnFlag = True
-check = False
+string = "This is a string that needs to be parsed "
 
-if(returnFlag and check):
-	print "Both are true"
-elif(returnFlag and not check):
-	print "Check is false"
+result = string.split(" ")
+del result[-1]
 
+print result

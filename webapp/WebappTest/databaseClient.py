@@ -18,10 +18,10 @@ print("Receiving Data")
 tm = s.recv(1024)
 print "Request Received"
 
-time.sleep(5)
+time.sleep(2)
 
 print "Sending DB"
-s.send("SGD:\r\n1 Billy 123:543:23:8675\r\nSGD:END\r\n")
+s.send("SGD:\r\n1 Billy 123:543:23:8675\r\nSGD:END")
 print "Database information is sent"
 
 print "Closing Connection" 

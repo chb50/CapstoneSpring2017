@@ -46,7 +46,6 @@ inputKey = None
 check = False
 results = []
 tableSGDB = []
-request_sent = False
 
 # class for threads
 class New_thread (threading.Thread):
@@ -86,6 +85,8 @@ def runConnection(threadName):
 				print "Received a Request!!! [%s]" % webapp_request
 				break
 			time.sleep(0.25)
+
+		time.sleep(5)
 			
 		print("Searching for Connection...")
 		clientsocket,addr = serversocket.accept()
@@ -97,7 +98,7 @@ def runConnection(threadName):
 		# If web app sends a new user request
 		if (webapp_request[0] == "N"):
 			data += clientsocket.recv(1024)#we only need to read once
-			end = data.find("NEW")
+			end = data.find("NAME_GET")
 			if end != -1:
 				if(err != -1):
 					print("New User Added!")
@@ -128,30 +129,23 @@ def runConnection(threadName):
 		elif(webapp_request[0] == "D"):
 			i = 0
 			time.sleep(5)
-			while True: #reading loop
-				data += clientsocket.recv(1024)#read once
 
-				print data
+			data += clientsocket.recv(2048)#read once
 
-				if i == 0: #if it is the first read, check for correct starting token
-					z = data.find("SGD:") #detect starting token
-					if z == -1: #if no starting token found, break connection
-						print("NO STARTING KEY FOUND")
-						break
+			print data
 
-				end = data.find("SGD:END") #if the final end token is detected, break
-				if end == -1:
-					print "NO END TOKEN DETECTED!"
-					break
+			if i == 0: #if it is the first read, check for correct starting token
+				z = data.find("SGD:") #detect starting token
+				if z == -1: #if no starting token found, break connection
+					print("NO STARTING KEY FOUND")
+					
+			end = data.find("SGD:END") #if the final end token is detected, break
+			if end == -1:
+				print "NO END TOKEN DETECTED!"
+				
+			results = data.split("\r\n") #split up the data and store it in list
+			del results[-1] #remove the last element from list (end token)
 
-				results.append(data)
-				break
-				# r = data.find("\r\n")#detect ending line token
-				# if r != -1:# if ending line token is detected
-				# 	print "Appending"
-				# 	i = i+1 # increment index
-				# 	results.append(data) # add the data to the table
-				# 	data = "" # empty the data buffer
 
 		#Empty the request buffer and data buffer
 		print "Resetting All"
@@ -292,25 +286,23 @@ def sgdb():
 	print "Return Flag = %r" % returnFlag
 
 	if returnFlag:
-		mutex.acquire()
-		returnFlag = False
-		results = []
-		mutex.release()
-		return render_template("databasesgd.html", table=tableSGDB, length=len(tableSGDB))
-	else:
-		webapp_request = "D"
-
-		time.sleep(10)
-
-		print("Attempting to connect to sgdb...")
-
+		print "Loading sgdb..."
 		for i in range(0,len(results)):
 			tableSGDB.append(results[i])
 
 		for i in range(len(results)-1, 11):
 			tableSGDB.append(" ")
-	print "table = ",
-	print tableSGDB
+
+		mutex.acquire()
+		returnFlag = False
+		results = []
+		mutex.release()
+
+		return render_template("databasesgd.html", tableSGDB=tableSGDB)
+	else:
+		webapp_request = "D"
+		time.sleep(10)
+		print("Attempting to connect to sgdb...")
 
 	return redirect(url_for('sgdb'))
 
