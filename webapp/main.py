@@ -203,15 +203,15 @@ def Back2Welcome():
 	return render_template('welcome_new.html')
 
 #stuff for new tag input
-@app.route('/tagInput', methods=['POST','GET'])
-def tagInput():
-	return render_template('addTag.html')
+# @app.route('/tagInput', methods=['POST','GET'])
+# def tagInput():
+# 	return render_template('addTag.html')
 
-@app.route('/newTagRequest', methods=['POST','GET'])
-def newTagRequest():
-	name = request.form['name']
-	session['newName'] = name
-	return redirect(url_for('tagCheck'))
+# @app.route('/newTagRequest', methods=['POST','GET'])
+# def newTagRequest():
+# 	name = request.form['name']
+# 	session['newName'] = name
+# 	return redirect(url_for('tagCheck'))
 
 
 # -------------------Working on modifying with parallel thread--------------
