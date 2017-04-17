@@ -336,7 +336,8 @@ def login():
 	cursor.execute(sqllog)
 	data = cursor.fetchone()
 	if data is None:
-		return render_template('login.html')
+		error = 'Invalid Username or Password'
+		return render_template('login_signup.html')
 	else:
 		session['logged_in'] = True
 		flash('Successfully logged in.')
