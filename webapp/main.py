@@ -309,7 +309,9 @@ def sgdb():
 #adding a new user to sgdb
 @app.route("/addUser", methods=['GET','POST'])
 def addUser():
-	addUser=request.form['addUser']
+	name = request.form['addUser']
+	session['newName'] = name
+	return redirect(url_for('tagCheck'))
 
 #removing a user from sgdb
 @app.route("/removeUser", methods=['GET','POST'])
