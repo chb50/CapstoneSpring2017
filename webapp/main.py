@@ -168,9 +168,9 @@ class sgdPacket():
 		self.name = name
 		self.NFCtag = NFCtag
 
-@app.route('/register_load', methods=['POST','GET'])
-def register_load():
-	return render_template('register.html')
+#@app.route('/register_load', methods=['POST','GET'])
+#def register_load():
+#	return render_template('signup_login.html')
 	
 @app.route('/register', methods=['POST','GET'])
 def register():
@@ -181,7 +181,7 @@ def register():
 	sqlreg = "INSERT INTO user (username, password) values ('%s', '%s')" % (reguser, regpass_hash)
 	cursor.execute(sqlreg)
 	db.commit()
-	return render_template('homepage.html')
+	return render_template('signup_login.html')
 
 # login required decorator
 def login_required(f):
@@ -196,7 +196,7 @@ def login_required(f):
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-	return render_template('homepage.html')
+	return render_template('signup_login.html')
 
 @app.route('/Back2Welcome', methods=['GET', 'POST'])
 def Back2Welcome():
@@ -320,10 +320,10 @@ def removeUser():
 
 # -------------------------------------------------------------------------
 
-# route for handling the login page logic
-@app.route('/login_load', methods=['POST','GET'])
-def login_load():
-	return render_template('login.html')
+#route for handling the login page logic
+#@app.route('/login_load', methods=['POST','GET'])
+#def login_load():
+	#return render_template('login.html')
 
 @app.route('/login', methods=['POST','GET'])
 def login():
@@ -347,7 +347,7 @@ def login():
 def logout():
 	session.pop('logged_in', None)
 	flash('Successfully logged out.')
-	return render_template('login.html')
+	return render_template('signup_login.html')
 
 @app.route('/authorization_load', methods=['POST','GET'])
 def authorization_load():
@@ -359,36 +359,36 @@ def authorization():
 	session['oneTimeKey'] = sgdid
 	return redirect(url_for('nonceMain'))
 
-@app.route('/DeviceAuthorization_load', methods=['POST','GET'])
-def DeviceAuthorization_load():
-	return render_template('DeviceAuthorization.html')
+#@app.route('/DeviceAuthorization_load', methods=['POST','GET'])
+#def DeviceAuthorization_load():
+	#return render_template('DeviceAuthorization.html')
 
 #Route to submit form data in database and display it in browser
 
-@app.route('/DeviceAuthorization', methods=['POST','GET'])
-def DeviceAuthorization():
-	user = request.form['UserName']
-	sgd = request.form['sgd_ID']
-	cursor = db.cursor()
-	radio_btn_val = request.form['authorization']
-	if radio_btn_val == 'authorize':
-		sqli = "INSERT INTO sgdauth (UserName, sgd_ID) values ('%s', '%s')" % (user, sgd)
-		cursor.execute(sqli)
-	if radio_btn_val == 'unauthorize':
-		sqli = "DELETE FROM sgdauth WHERE UserName=%s AND sgd_ID=%s"
-		cursor.execute(sqli, (user,sgd,))
-	db.commit()
-	cursor=db.cursor()
-	sqls = "SELECT * FROM sgdauth"
-	cursor.execute(sqls)
-	db_data = cursor.fetchall()
-	tbl = "<table style='border:1px solid blue'>"
-	for row in db_data:
-		tbl = tbl + "<tr>"
-		for data in row:
-			tbl = tbl + "<td>" + str(data) + "</td>"
-		tbl = tbl + "</tr>"
-	return "<html><body>" + tbl + "</body></html>"
+#@app.route('/DeviceAuthorization', methods=['POST','GET'])
+#def DeviceAuthorization():
+#	user = request.form['UserName']
+#	sgd = request.form['sgd_ID']
+#	cursor = db.cursor()
+#	radio_btn_val = request.form['authorization']
+#	if radio_btn_val == 'authorize':
+#		sqli = "INSERT INTO sgdauth (UserName, sgd_ID) values ('%s', '%s')" % (user, sgd)
+#		cursor.execute(sqli)
+#	if radio_btn_val == 'unauthorize':
+#		sqli = "DELETE FROM sgdauth WHERE UserName=%s AND sgd_ID=%s"
+#		cursor.execute(sqli, (user,sgd,))
+#	db.commit()
+#	cursor=db.cursor()
+#	sqls = "SELECT * FROM sgdauth"
+#	cursor.execute(sqls)
+#	db_data = cursor.fetchall()
+#	tbl = "<table style='border:1px solid blue'>"
+#	for row in db_data:
+#		tbl = tbl + "<tr>"
+#		for data in row:
+#			tbl = tbl + "<td>" + str(data) + "</td>"
+#		tbl = tbl + "</tr>"
+#	return "<html><body>" + tbl + "</body></html>"
 
 
 
