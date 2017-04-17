@@ -2,24 +2,52 @@
 
 <html>
 
+<head>
+<meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="../css/welcome_style.css" type="text/css" rel="stylesheet"/>
+<title> Welcome </title>
+</head>
+
 <body>
-<h1> Welcome to the SGD Web App </h1>
+<h1 class="pageTitle"> SGD Home </h1>
 </body>
 
+<div class="form_wrapper">
+
+<fieldset>
+
+<div class= "auth_load">
 <form action="/authorization_load" method="POST">
-<button type=submit> Enter SGD ID </button>
+<button class="input_button" type="submit"> Enter SGD ID </button>
 </form>
+</div>
+
 <br>
+
+<div class="sgdb">
 <form action="/sgdb" method="POST">
-<button type=submit> View SGD DB </button>
+<button class="input_button" type="submit"> View SGD DB </button>
 </form>
+</div>
+
 <br>
+
+<div class="tagInput">
 <form action="/tagInput" method="POST">
-<button type=submit> Add New SGD Tag </button>
+<button class="input_button" type="submit"> Add New SGD Tag </button>
 </form>
+</div>
+
 <br>
+
+<div class="logout">
 <form action="/logout" method="POST">
-<button type=submit> Logout of Web App </button>
+<button class="input_button" type="submit"> Logout of Web App </button>
 </form>
+</div>
+
+</div>
+
+</fieldset>
 
 </html>
