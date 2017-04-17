@@ -22,7 +22,7 @@ host = '0.0.0.0'
 port = 10000
 
 #Open db connection
-db = MySQLdb.connect("localhost","SGDAdmin","password","WEBAPP")
+db = MySQLdb.connect("localhost","root","password","py")
 
 #prepare cursor object
 cursor = db.cursor()
@@ -400,4 +400,4 @@ if __name__ == '__main__':
 	socket_thread = New_thread("Socket Thread")
 	socket_thread.start()
 
-	app.run()
+	app.run(debug=True)
