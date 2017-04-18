@@ -37,7 +37,7 @@ tm = s.recv(1024)
 print "Name = ", name
 
 print "Sending DB"
-s.send("SGD:\r\n1 %s 123:543:23:8675\r\nSGD:END" % name)
+s.send("SGD:\r\n1 %s 123:543:23:8675\r\n" % name)
 print "Database information is sent"
 
 print "Closing Connection" 

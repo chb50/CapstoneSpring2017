@@ -21,7 +21,7 @@ print "Request Received"
 time.sleep(2)
 
 print "Sending DB"
-s.send("SGD:\r\n1 Billy 123:543:23:8675\r\nSGD:END")
+s.send("SGD:\r\n1 Billy 123:543:23:8675\r\n")
 print "Database information is sent"
 
 print "Closing Connection" 

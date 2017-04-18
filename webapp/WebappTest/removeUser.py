@@ -18,14 +18,14 @@ def main():
 def runConnection():
 
 	print("Running Connection")
-	name = "Cuck++" #make sure to append the termination character
-	request = "N" + name
+	name = "Cuck" #make sure to append the termination character
+	request = "R" + name
 		# create a socket object
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
 	# universal name
 	host = '0.0.0.0';                       
-	port = 10000                               
+	port = 10000                                   
 
 	# bind to the port
 	serversocket.bind((host, port))                                  
@@ -47,12 +47,12 @@ def runConnection():
 
 		end = data.find("NEW") #if the final end token is detected, break
 		if end != -1:
-			print("New Tag Registered")
+			print("Name removed")
 			clientsocket.close()
 			serversocket.close()
 			return True
 		else:
-			print("Error in Registration")
+			print("Name not removed")
 			clientsocket.close()
 			serversocket.close() 
 			return False

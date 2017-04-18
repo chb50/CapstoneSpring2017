@@ -137,13 +137,8 @@ def runConnection(threadName):
 			z = data.find("SGD:") #detect starting token
 			if z == -1: #if no starting token found, break connection
 				print("NO STARTING KEY FOUND")
-					
-			end = data.find("SGD:END") #if the final end token is detected, break
-			if end == -1:
-				print "NO END TOKEN DETECTED!"
 				
 			results = data.split("\r\n") #split up the data and store it in list
-			del results[-1] #remove the last element from list (end token)
 
 		#If the webapp sends a remove user request
 		elif(webapp_request[0] == "R"):
@@ -174,16 +169,6 @@ def runConnection(threadName):
 		clientsocket.close()
 	serversocket.close()
 # ---------------------------------------------------
-
-#sgd packet class from hello3
-class sgdPacket():
-	def __init__(self, name, NFCtag):
-		self.name = name
-		self.NFCtag = NFCtag
-
-#@app.route('/register_load', methods=['POST','GET'])
-#def register_load():
-#	return render_template('signup_login.html')
 	
 @app.route('/register', methods=['POST','GET'])
 def register():
@@ -309,8 +294,6 @@ def sgdb():
 	global results
 	global tableSGDB
 
-	print "Return Flag = %r" % returnFlag
-
 	if returnFlag:
 		tableSGDB = []
 		print "Loading sgdb..."
@@ -328,7 +311,7 @@ def sgdb():
 		return render_template("databasesgd.html", tableSGDB=tableSGDB)
 	else:
 		webapp_request = "D"
-		time.sleep(5)
+		time.sleep(10)
 		print("Attempting to connect to sgdb...")
 
 	return redirect(url_for('sgdb'))
@@ -348,11 +331,6 @@ def removeUser():
 	return redirect(url_for('remove_user'))
 
 # -------------------------------------------------------------------------
-
-#route for handling the login page logic
-#@app.route('/login_load', methods=['POST','GET'])
-#def login_load():
-	#return render_template('login.html')
 
 @app.route('/login', methods=['POST','GET'])
 def login():
