@@ -107,7 +107,7 @@ def runConnection(threadName):
 					print("Writing Error in new user")
 					clientsocket.close()
 			else:
-				print "Incoming data does not contain NEW!"
+				print "Incoming data does not contain NAME_GET!"
 
 		#If webapp sends a one time key request
 		elif (webapp_request[0] == "O"):
@@ -127,17 +127,16 @@ def runConnection(threadName):
 
 		#If the webapp sends a database request
 		elif(webapp_request[0] == "D"):
-			i = 0
 			time.sleep(5)
 
 			data += clientsocket.recv(2048)#read once
 
 			print data
 
-			if i == 0: #if it is the first read, check for correct starting token
-				z = data.find("SGD:") #detect starting token
-				if z == -1: #if no starting token found, break connection
-					print("NO STARTING KEY FOUND")
+			#if it is the first read, check for correct starting token
+			z = data.find("SGD:") #detect starting token
+			if z == -1: #if no starting token found, break connection
+				print("NO STARTING KEY FOUND")
 					
 			end = data.find("SGD:END") #if the final end token is detected, break
 			if end == -1:
@@ -145,6 +144,20 @@ def runConnection(threadName):
 				
 			results = data.split("\r\n") #split up the data and store it in list
 			del results[-1] #remove the last element from list (end token)
+
+		#If the webapp sends a remove user request
+		elif(webapp_request[0] == "R"):
+			data += clientsocket.recv(1024)#we only need to read once
+			end = data.find("NAME_GET")
+			if end != -1:
+				if(err != -1):
+					print("User Removed!")
+					clientsocket.close()
+				else:
+					print("Writing Error in remove user")
+					clientsocket.close()
+			else:
+				print "Incoming data does not contain NAME_GET!"
 
 
 		#Empty the request buffer and data buffer
@@ -202,18 +215,6 @@ def home():
 def Back2Welcome():
 	return render_template('welcome_new.html')
 
-#stuff for new tag input
-# @app.route('/tagInput', methods=['POST','GET'])
-# def tagInput():
-# 	return render_template('addTag.html')
-
-# @app.route('/newTagRequest', methods=['POST','GET'])
-# def newTagRequest():
-# 	name = request.form['name']
-# 	session['newName'] = name
-# 	return redirect(url_for('tagCheck'))
-
-
 # -------------------Working on modifying with parallel thread--------------
 #This is currenty working as intended with the socket thread
 @app.route('/tagCheck',methods = ['POST','GET']) #add post and get methods to make sure
@@ -237,6 +238,31 @@ def tagCheck():
 	
 	return redirect(url_for('tagCheck'))
 # ---------------------------------------------------------------------------
+
+# -------------------Working on modifying with parallel thread--------------
+#This is currenty working as intended with the socket thread
+@app.route('/remove_user',methods = ['POST','GET']) #add post and get methods to make sure
+def remove_user():
+	global webapp_request
+	global returnFlag
+
+	if returnFlag:
+		mutex.acquire()
+		returnFlag = False
+		mutex.release()
+		print "Redirecting to sgdb"
+		return redirect(url_for('sgdb'))
+
+	print("Registering new tag")
+	username = session.get('newName', None)
+
+	webapp_request = "R" + username
+
+	time.sleep(10) #Not the most efficient way, but it works for now
+	
+	return redirect(url_for('remove_user'))
+# ---------------------------------------------------------------------------
+
 
 # -------------------Working on modifying with parallel thread--------------
 #this does the check for the one time key
@@ -286,6 +312,7 @@ def sgdb():
 	print "Return Flag = %r" % returnFlag
 
 	if returnFlag:
+		tableSGDB = []
 		print "Loading sgdb..."
 		for i in range(0,len(results)):
 			tableSGDB.append(results[i])
@@ -301,7 +328,7 @@ def sgdb():
 		return render_template("databasesgd.html", tableSGDB=tableSGDB)
 	else:
 		webapp_request = "D"
-		time.sleep(10)
+		time.sleep(5)
 		print("Attempting to connect to sgdb...")
 
 	return redirect(url_for('sgdb'))
@@ -316,7 +343,9 @@ def addUser():
 #removing a user from sgdb
 @app.route("/removeUser", methods=['GET','POST'])
 def removeUser():
-	removeUser=request.form['removeUser']
+	remove_name = request.form['removeUser']
+	session['newName'] = remove_name
+	return redirect(url_for('remove_user'))
 
 # -------------------------------------------------------------------------
 
@@ -359,38 +388,6 @@ def authorization():
 	sgdid = request.form['sgdid']
 	session['oneTimeKey'] = sgdid
 	return redirect(url_for('nonceMain'))
-
-#@app.route('/DeviceAuthorization_load', methods=['POST','GET'])
-#def DeviceAuthorization_load():
-	#return render_template('DeviceAuthorization.html')
-
-#Route to submit form data in database and display it in browser
-
-#@app.route('/DeviceAuthorization', methods=['POST','GET'])
-#def DeviceAuthorization():
-#	user = request.form['UserName']
-#	sgd = request.form['sgd_ID']
-#	cursor = db.cursor()
-#	radio_btn_val = request.form['authorization']
-#	if radio_btn_val == 'authorize':
-#		sqli = "INSERT INTO sgdauth (UserName, sgd_ID) values ('%s', '%s')" % (user, sgd)
-#		cursor.execute(sqli)
-#	if radio_btn_val == 'unauthorize':
-#		sqli = "DELETE FROM sgdauth WHERE UserName=%s AND sgd_ID=%s"
-#		cursor.execute(sqli, (user,sgd,))
-#	db.commit()
-#	cursor=db.cursor()
-#	sqls = "SELECT * FROM sgdauth"
-#	cursor.execute(sqls)
-#	db_data = cursor.fetchall()
-#	tbl = "<table style='border:1px solid blue'>"
-#	for row in db_data:
-#		tbl = tbl + "<tr>"
-#		for data in row:
-#			tbl = tbl + "<td>" + str(data) + "</td>"
-#		tbl = tbl + "</tr>"
-#	return "<html><body>" + tbl + "</body></html>"
-
 
 
 # start the server with the 'run()' method
