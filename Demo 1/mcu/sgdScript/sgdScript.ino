@@ -52,7 +52,7 @@
 #define MEGA_IRQ 21
 #define MEGA_RST 46
 #define MEGA_WAKE 41
-#define PORT 10001
+#define PORT 10000
 
 struct entry {
   //800 bytes for 10 entries
