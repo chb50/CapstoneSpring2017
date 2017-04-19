@@ -102,10 +102,8 @@ def runConnection(threadName):
 			if end != -1:
 				if(err != -1):
 					print("New User Added!")
-					clientsocket.close()
 				else:
 					print("Writing Error in new user")
-					clientsocket.close()
 			else:
 				print "Incoming data does not contain NAME_GET!"
 
@@ -122,7 +120,7 @@ def runConnection(threadName):
 				print("Keys Match!")
 				check = True
 			else:
-				print("Invalid input")
+				print("Invalid Key")
 				check = False
 
 		#If the webapp sends a database request
@@ -147,12 +145,13 @@ def runConnection(threadName):
 			if end != -1:
 				if(err != -1):
 					print("User Removed!")
-					clientsocket.close()
 				else:
 					print("Writing Error in remove user")
-					clientsocket.close()
 			else:
 				print "Incoming data does not contain NAME_GET!"
+
+		elif(webapp_request[0] == "L"):
+			print "Logout Request Sent to SGD"
 
 
 		#Empty the request buffer and data buffer
@@ -353,6 +352,12 @@ def login():
 @app.route('/logout', methods=['POST','GET'])
 @login_required
 def logout():
+
+	global webapp_request
+
+	webapp_request = "L"
+	time.sleep(1)
+
 	session.pop('logged_in', None)
 	flash('Successfully logged out.')
 	return render_template('signup_login.html')
