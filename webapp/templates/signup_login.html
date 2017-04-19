@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+<meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="../static/css/main_style.css" type="text/css" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<title> Register/Login </title>
+</head>
+
+<body>
+<div class="form_wrapper">
+	<input type="checkbox" name="flip" id="flip" class="flip" hidden />
+	<div class="container">
+		<div class="login_form">
+			<h1 class="pageTitle"> SGD System Login </h1>
+			<title>Login</title>
+			<form name="login" id="login" class="form" action="/login"  method="POST">
+
+			<fieldset class="input_fieldset">
+			<label for="loguser">
+			<span class="user_icon fa fa-user"></span>
+			</label>
+			<input type="text" id="loguser" name="loguser" class="input_fields" placeholder="Username" required>
+			</fieldset>
+	
+			<fieldset class="input_fieldset">
+			<label for="logpass">
+				<span class="pass_icon fa fa-key"></span>
+			</label>
+			<input type="password" id="logpass" name="logpass" class="input_fields" placeholder="Password" required>
+			</fieldset>
+	
+			<fieldset class="input_fieldset">
+			<input class="input_button" type="submit" value="Login">
+			</fieldset>
+	
+			<small> <em> First-time user? </em> <label for="flip" class="link_inv"> Register </label> </small>
+	
+			</form>
+		</div>
+		
+		<div class="register_form">
+			<h1 class="pageTitle"> SGD System Registration </h1>
+			<title>Register</title>
+			<form name="register" id="register" class="form" action="/register"  method="POST">
+
+			<fieldset class="input_fieldset">
+			<label for="reguser">
+				<span class="user_icon fa fa-user"></span>
+			</label>
+			<input type="text" id="reguser" name="reguser" class="input_fields" placeholder="Username" required>
+			</fieldset>
+	
+			<fieldset class="input_fieldset">
+			<label for="regpass">
+			<span class="pass_icon fa fa-lock"></span>
+			</label>
+			<input type="password" id="regpass" name="regpass" class="input_fields" placeholder="Password" required>
+			</fieldset>
+	
+			<fieldset class="input_fieldset">
+			<input class="input_button" type="submit" value="Register">
+			</fieldset>
+	
+			<small> <em> Have an account? </em> <label for="flip" class="link_inv"> Login </label> </small>
+	
+			</form>
+		</div>
+	</div>
+</div>
+</body>
+</html>

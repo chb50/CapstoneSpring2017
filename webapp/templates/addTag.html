@@ -1,23 +1,28 @@
 <!DOCTYPE html>
 <html>
+
+<head>
+<meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="../css/addTag_style.css" type="text/css" rel="stylesheet"/>
+</head>
+
 <body>
-
-<h1> SGD Tag Modifications </h1>
-<p> Associate a new tag with a name. </p>
-
+<h1 class="pageTitle"> Add SGD Tags </h1>
 </body>
+
+<div class="form_wrapper">
 
 <form action="/newTagRequest" method="post">
 
 	<fieldset>
-		<legend>Please input the following:</legend>
+		<legend>Identification</legend>
 		Name: <br>
-		<input type="text" name="name"> <br> <br>
+		<input class="input_fields" type="text" name="name"> <br> <br>
 
-		<input type="submit" value="Add"
+		<input class="input_button" type="submit" value="Add">
 	</fieldset>
+
 
 </form>
 
-<br>
-<br>
+</div>

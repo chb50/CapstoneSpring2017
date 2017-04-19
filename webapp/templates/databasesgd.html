@@ -1,32 +1,57 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+<meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="../static/css/sgd_style.css" type="text/css" rel="stylesheet"/>
 <!-- <script src="jquery.min.js"></script> -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <!-- <script type="text/javascript" src="js/jquery.min.js"></script> -->
-
+<title> SGD DB </title>
 </head>
+
 <body>
-
-<p>Smart Gun DB</p>
-
-<p>{{table[1]}}</p>
-<p>{{table[2]}}</p>
-<p>{{table[3]}}</p>
-<p>{{table[4]}}</p>
-<p>{{table[5]}}</p>
-<p>{{table[6]}}</p>
-<p>{{table[7]}}</p>
-<p>{{table[8]}}</p>
-<p>{{table[9]}}</p>
-<p>{{table[10]}}</p>
-
-<p id = "table"></p>
-
 <form action="/Back2Welcome" method="POST">
-<button type=submit> Go Back to Welcome Page </button>
+<button class="input_button" type="submit"> Go Back </button>
+</form>
+<h1 class="pageTitle"> SGD Database </h1>
+</body>
+
+<div class="form_wrapper">
+
+<!-- Start from 1 because the first element in the list is SGD -->
+
+<p>{{ tableSGDB[1] }}</p>
+<p>{{ tableSGDB[2] }}</p>
+<p>{{ tableSGDB[3] }}</p>
+<p>{{ tableSGDB[4] }}</p>
+<p>{{ tableSGDB[5] }}</p>
+<p>{{ tableSGDB[6] }}</p>
+<p>{{ tableSGDB[7] }}</p>
+<p>{{ tableSGDB[8] }}</p>
+<p>{{ tableSGDB[9] }}</p>
+<p>{{ tableSGDB[10] }}</p>
+
+<p id = "tableSGDB"></p>
+
+<br><br>
+<fieldset>
+<legend> Add/Remove Users </legend>
+
+<form action="/addUser" method="POST">
+<input class="input_fields" type="text" name="addUser" placeholder="Username" required>
+
+<button class="input_button" type="submit"> Add User </button>
 </form>
 
+<br><br>
 
-</body>
+<form action="/removeUser" method="POST">
+<input class="input_fields" type="text" name="removeUser" placeholder="Username" required>
+
+<button class="input_button" type="submit"> Remove User </button>
+</form>
+</fieldset>
+</div>
+
 </html>

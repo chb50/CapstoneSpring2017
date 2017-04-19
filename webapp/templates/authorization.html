@@ -1,26 +1,36 @@
 <!DOCTYPE html>
 <html>
+
+<head>
+<meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="../static/css/authorization_style.css" type="text/css" rel="stylesheet"/>
+<title> Permissions </title>
+</head>
+
 <body>
-
-<h1> SGD Home </h1>
-<p> Modify existing permissions for an SGD. </p>
-
+<form action="/Back2Welcome" method="POST">
+<button class="input_button" type="submit"> Go Back </button>
+</form>
+<h1 class="pageTitle"> Modify SGD Permissions </h1>
 </body>
 
-<form action="/authorization" method="post">
+<div class="form_wrapper">
+
+<form action="/authorization" method="POST">
 
 	<fieldset>
-		<legend>Identification:</legend>
+		<legend>Identification</legend>
 		SGD ID: <br>
-		<input type="text" name="sgdid"> <br> <br>
+		<input class="input_fields" type="text" name="sgdid"> <br> <br>
 
-		<input type="submit" value="Search"
+		<input class="input_button" type="submit" value="Search"
 	</fieldset>
 
 </form>
 
-<br>
-<br>
+</div>
+
+
 <!--
 <form action="/postmethod" method="post">
 Have a one-time authentication key? <br>
