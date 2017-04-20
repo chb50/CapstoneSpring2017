@@ -262,7 +262,6 @@ def remove_user():
 	return redirect(url_for('remove_user'))
 # ---------------------------------------------------------------------------
 
-
 # -------------------Working on modifying with parallel thread--------------
 #this does the check for the one time key
 # This is currently working as intended
@@ -325,7 +324,7 @@ def sgdb():
 		results = []
 		mutex.release()
 
-		return render_template("databasesgd.html", tableSGDB=tableSGDB)
+		return render_template("databasesgd.html", tableSGDB=tableSGDB, timeout=False)
 	else:
 		if load_counter < 3:
 			webapp_request = "D"
@@ -339,7 +338,7 @@ def sgdb():
 			webapp_request = None
 			returnFlag = False
 			mutex.release()
-			return render_template("databasesgd.html", tableSGDB=[])
+			return render_template("databasesgd.html", tableSGDB=[], timeout=True)
 
 
 	return redirect(url_for('sgdb'))
