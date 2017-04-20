@@ -17,6 +17,7 @@ hashgun = Hashing(app)
 # config
 app.secret_key = os.urandom(11)
 
+
 # host and port for the socket
 host = '0.0.0.0'
 port = 10000
@@ -44,6 +45,7 @@ webapp_request = None
 returnFlag = False
 inputKey = None
 check = False
+load_counter = 0
 results = []
 tableSGDB = []
 
@@ -67,9 +69,12 @@ def runConnection(threadName):
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)                             
 	serversocket.bind((host, port))                                  
-	serversocket.listen(5) 
+	serversocket.listen(5)
+
+	serversocket.settimeout(30)
 
 	data = ""
+	reset = False
 
 	global returnFlag
 	global webapp_request
@@ -80,6 +85,7 @@ def runConnection(threadName):
 
 	while True: #accepting loop
 		print "Waiting for request..."
+		time.sleep(1)
 		while True:
 			if(webapp_request != None):
 				print "Received a Request!!! [%s]" % webapp_request
@@ -87,16 +93,24 @@ def runConnection(threadName):
 			time.sleep(0.25)
 
 		time.sleep(5)
-			
-		print("Searching for Connection...")
-		clientsocket,addr = serversocket.accept()
-		print("Got a connection from %s" % str(addr))
+		
+		try:
+			print("Searching for Connection...")
+			clientsocket,addr = serversocket.accept()
+			print("Got a connection from %s" % str(addr))
+			err = clientsocket.send(webapp_request)
+			print "Request Sent"
+		except:
+			pass
 
-		err = clientsocket.send(webapp_request)
-		print "Request Sent"
+		#if the request is empty
+		if(webapp_request == None):
+			print "Resetting the connection socket"
+			reset = True
+		
 
 		# If web app sends a new user request
-		if (webapp_request[0] == "N"):
+		elif (webapp_request[0] == "N"):
 			data += clientsocket.recv(1024)#we only need to read once
 			end = data.find("NAME_GET")
 			if end != -1:
@@ -165,7 +179,8 @@ def runConnection(threadName):
 		returnFlag = True
 		mutex.release()
 
-		clientsocket.close()
+		if(not reset):
+			clientsocket.close()
 	serversocket.close()
 # ---------------------------------------------------
 	
@@ -292,9 +307,12 @@ def sgdb():
 	global returnFlag
 	global results
 	global tableSGDB
+	global load_counter
+
+	tableSGDB = []
 
 	if returnFlag:
-		tableSGDB = []
+		load_counter = 0
 		print "Loading sgdb..."
 		for i in range(0,len(results)):
 			tableSGDB.append(results[i])
@@ -309,9 +327,20 @@ def sgdb():
 
 		return render_template("databasesgd.html", tableSGDB=tableSGDB)
 	else:
-		webapp_request = "D"
-		time.sleep(10)
-		print("Attempting to connect to sgdb...")
+		if load_counter < 3:
+			webapp_request = "D"
+			time.sleep(8)
+			print("Attempting to connect to sgdb...")
+			load_counter += 1
+		else: #If there is a timeout
+			print "--------TIMEOUT in connection--------"
+			load_counter = 0
+			mutex.acquire()
+			webapp_request = None
+			returnFlag = False
+			mutex.release()
+			return render_template("databasesgd.html", tableSGDB=[])
+
 
 	return redirect(url_for('sgdb'))
 
