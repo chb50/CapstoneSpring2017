@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask import session, flash
 from flask import jsonify
-import json
 import os, sys
 from functools import wraps
 import MySQLdb
@@ -24,7 +23,7 @@ host = '0.0.0.0'
 port = 10000
 
 #Open db connection
-db = MySQLdb.connect("localhost","root","password","py")
+db = MySQLdb.connect("localhost","SGDAdmin","password","WEBAPP")
 
 #prepare cursor object
 cursor = db.cursor()
@@ -93,6 +92,7 @@ def runConnection(threadName):
 			time.sleep(0.25)
 
 		time.sleep(2)
+		reset = False
 		
 		try:
 			print("Searching for Connection...")
@@ -114,22 +114,17 @@ def runConnection(threadName):
 			data += clientsocket.recv(1024)#we only need to read once
 			end = data.find("NAME_GET")
 			if end != -1:
-				if(err != -1):
-					print("New User Added!")
-				else:
+				if(err == -1):
 					print("Writing Error in new user")
 			else:
 				print "Incoming data does not contain NAME_GET!"
 
 		#If webapp sends a one time key request
 		elif (webapp_request[0] == "O"):
-			print("Waiting to Receive data...")
 			data += clientsocket.recv(1024)
-			print("Data Received, Comparing...")
 			while (inputKey == None):
 				time.sleep(1)
 
-			print "Comparing keys"
 			if(data == inputKey):
 				print("Keys Match!")
 				check = True
@@ -142,8 +137,6 @@ def runConnection(threadName):
 			time.sleep(3)
 
 			data += clientsocket.recv(2048)#read once
-
-			print data
 
 			#if it is the first read, check for correct starting token
 			z = data.find("SGD:") #detect starting token
@@ -169,7 +162,7 @@ def runConnection(threadName):
 
 
 		#Empty the request buffer and data buffer
-		print "Resetting All"
+		print "Resetting"
 		print "Results table = ",
 		print results
 		time.sleep(1)
@@ -233,7 +226,7 @@ def tagCheck():
 
 	webapp_request = "N" + username
 
-	time.sleep(10) #Not the most efficient way, but it works for now
+	time.sleep(9) #Not the most efficient way, but it works for now
 	
 	return redirect(url_for('tagCheck'))
 # ---------------------------------------------------------------------------
@@ -257,7 +250,7 @@ def remove_user():
 
 	webapp_request = "R" + username
 
-	time.sleep(10) #Not the most efficient way, but it works for now
+	time.sleep(9) #Not the most efficient way, but it works for now
 	
 	return redirect(url_for('remove_user'))
 # ---------------------------------------------------------------------------
@@ -290,7 +283,7 @@ def nonceMain():
 	webapp_request = "O"
 	inputKey = session.get('oneTimeKey', None)
 
-	time.sleep(10)
+	time.sleep(9)
 
 	return redirect(url_for('nonceMain'))
 
@@ -326,7 +319,7 @@ def sgdb():
 
 		return render_template("databasesgd.html", tableSGDB=tableSGDB)
 	else:
-		if load_counter < 3:
+		if load_counter < 4:
 			webapp_request = "D"
 			time.sleep(8)
 			print("Attempting to connect to sgdb...")
@@ -338,12 +331,7 @@ def sgdb():
 			webapp_request = None
 			returnFlag = False
 			mutex.release()
-<<<<<<< HEAD
-			return render_template("databasesgd.html", tableSGDB=tableSGDB, timeout=True)
-=======
-			return render_template("databasesgd_timeout.html", tableSGDB=[])
->>>>>>> 8bb27547777a1775a6450f63cd8ee40a72c41b66
-
+			return render_template("databasesgd_timeout.html", tableSGDB=tableSGDB)
 
 	return redirect(url_for('sgdb'))
 
