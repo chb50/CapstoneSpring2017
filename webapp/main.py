@@ -85,14 +85,13 @@ def runConnection(threadName):
 
 	while True: #accepting loop
 		print "Waiting for request..."
-		time.sleep(1)
 		while True:
 			if(webapp_request != None):
 				print "Received a Request!!! [%s]" % webapp_request
 				break
 			time.sleep(0.25)
 
-		time.sleep(5)
+		time.sleep(2)
 		
 		try:
 			print("Searching for Connection...")
@@ -139,7 +138,7 @@ def runConnection(threadName):
 
 		#If the webapp sends a database request
 		elif(webapp_request[0] == "D"):
-			time.sleep(5)
+			time.sleep(3)
 
 			data += clientsocket.recv(2048)#read once
 
@@ -338,7 +337,7 @@ def sgdb():
 			webapp_request = None
 			returnFlag = False
 			mutex.release()
-			return render_template("databasesgd.html", tableSGDB=[], timeout=True)
+			return render_template("databasesgd.html", tableSGDB=tableSGDB, timeout=True)
 
 
 	return redirect(url_for('sgdb'))
