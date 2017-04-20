@@ -60,7 +60,7 @@
 
 //for nfc
 #define T_OUT_1 1000
-#define T_OUT_10 10000
+#define T_OUT_5 5000
 
 //for leds
 /*NOTE: led color states:
@@ -151,8 +151,8 @@ void setup(void) {
 
   randomSeed(analogRead(0));
   //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
-  deleteAll(); //for testing
-  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
+//  deleteAll(); //for testing
+//  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
   // create table at with starting address 0
   if(db.open(DB_START) != EDB_OK) { 
     Serial.println("Database does not exist on this device");
@@ -231,8 +231,10 @@ void loop(void) {
     Serial.println("FIRING MODE ACTIVE");
     stateSnake(SNAKE_SIZE, 255, 0, 0, false); //set leds to red, ocillate
 
+    wdt_enable(WDTO_2S);
     Serial.println("\nWaiting for an ISO14443A Card ...");
     success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, T_OUT_1);
+    wdt_reset(); 
         
     if (success) {
       // Display some basic information about the card
@@ -261,8 +263,7 @@ void loop(void) {
           stateSnake(SNAKE_SIZE, 255, 0, 0, true); //led set to red, freeze
         }
         //ready gun to fire if authorization has been approved
-        //WE ARE USING AN NMOS AS SWITCH, so its active low
-        smartGun.getFlags() & AUTH ? digitalWrite(FIRE_BUTTON, LOW): digitalWrite(FIRE_BUTTON, HIGH);
+        smartGun.getFlags() & AUTH ? digitalWrite(FIRE_BUTTON, HIGH): digitalWrite(FIRE_BUTTON, LOW);
         
         uint8_t data[32];
   
@@ -296,12 +297,13 @@ void loop(void) {
     }
   } else {
       digitalWrite(MEGA_WAKE, HIGH);
-
+      wdt_disable();//if we come from firing mode
       Serial.println("WIFI MODE ACTIVE");
       stateSnake(SNAKE_SIZE, 255, 255, 0, false);//set leds to yellow, ocillate
       //deleteAll();
       
 //      //add nfc tag to database (for testing)
+//      //DONT FORGET TO DELETE ALL IF DB IS FULL WHEN DOING SIMULATION
 //      if (db.count() < ENTRY_COUNT) {
 //        appendEntry(db.count()+1, nameGen(db.count()+1), uid);
 //        Serial.println(db.count());
@@ -355,6 +357,7 @@ void loop(void) {
 
     digitalWrite(MEGA_WAKE, LOW);
 
+    //to be used with testing when manually adding entries
     if (db.count() >= ENTRY_COUNT) {
       Serial.println("DB limit reached, resetting db");
       deleteAll();
@@ -380,6 +383,7 @@ int dbCount() {
   return db.count();
 }
 
+//print the database
 void dbPrint() {
   Serial.println("Printing database");
   for(int i = 1; i <= db.count(); ++i) {
@@ -400,8 +404,8 @@ void dbPrint() {
   }
 }
 
-void appendEntry(int id, char* userName, uint8_t* nfcTag)
-{
+//add and entry to the database
+void appendEntry(int id, char* userName, uint8_t* nfcTag) {
   Serial.print("Appending record...");
   entry.id = id;
   entry.userName = new char[16];
@@ -421,8 +425,8 @@ void appendEntry(int id, char* userName, uint8_t* nfcTag)
   if (result != EDB_OK) printError(result);
 }
 
-void deleteAll()
-{
+//delete all entries in the database
+void deleteAll() {
   Serial.print("Truncating table...");
   for(int i = 1; i <= db.count(); ++i) {
     EDB_Status result = db.readRec(i, EDB_REC entry); //EDB_REC is the struct instance of an entry in the table
@@ -435,8 +439,8 @@ void deleteAll()
   db.clear();
 }
 
-void deleteEntry(int recno)
-{
+//delete an entry of the database
+void deleteEntry(int recno) {
   Serial.print("Deleting recno");
   EDB_Status result = db.readRec(recno, EDB_REC entry); //EDB_REC is the struct instance of an entry in the table
   if (result == EDB_OK) {
@@ -447,6 +451,7 @@ void deleteEntry(int recno)
   db.deleteRec(recno);
 }
 
+//search through database based on tag id
 uint8_t tagSearch(uint8_t* uid) {
   for (int recno = 1; recno <= db.count(); recno++)
   {
@@ -492,6 +497,7 @@ uint8_t nameSearch(char* userName) {
   return 0;
 }
 
+//send unique smartgun id to web app
 void sendId() {
   if(smartGun.getFlags() & WIFI_CONN){
     Serial.println("Sending ID");
@@ -501,7 +507,7 @@ void sendId() {
   }
 }
 
-//TODO: need to retest this
+//send db contents to web app
 void sendDb() {
   if (smartGun.getFlags() & WIFI_CONN) { //nfc craps out when we try to send information
     Serial.println("Sending DB info");
@@ -531,8 +537,9 @@ void sendDb() {
   }
 }
 
+//get a username sent from the web app
 uint8_t getNewTagName(char* newUsrNm) {
-  wdt_enable(WDTO_8S); //watchdog set to 8 sec for infinite loop in this function
+  //wdt_enable(WDTO_8S); //watchdog set to 8 sec for infinite loop in this function
   if(smartGun.getFlags() & WIFI_CONN) { //check to see if we connected to the webapp
     int i = 0;
     
@@ -540,17 +547,16 @@ uint8_t getNewTagName(char* newUsrNm) {
     // if there are incoming bytes available
     // from the server, read them and print them:
     Serial.println("Recieving username...");
-    while(!client.available());
-    wdt_reset(); //reset wd so system doesnt restart
+//    while(!client.available()); //vineet is sending as 1 string, so i dont think we need this
+//    wdt_reset(); //reset wd so system doesnt restart
     do {
       newUsrNm[i] = client.read();
       i++;
       if (!client.available() or i == 15) {
         newUsrNm[i] = '\0';
       }
-    }while (client.available());
-    wdt_reset();
-    wdt_disable();
+    }while (client.available() and newUsrNm[i] != '\0');
+//    wdt_disable();
     client.print("NAME_GET");
     Serial.println(newUsrNm);
     return 1;
@@ -561,11 +567,24 @@ uint8_t getNewTagName(char* newUsrNm) {
   }
 }
 
+//read in a tag for adding a new user to the database
 void readNewTag(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
   uint8_t success;
-
+  int timeout = 0;
+  wdt_enable(WDTO_8S); //hardware a bit buggy here, so we adding this
   Serial.println("Waiting for an ISO14443A Card ...");
-  success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+  success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, T_OUT_5);
+  while(!success) {
+    wdt_reset();
+    timeout++;
+      if(timeout >= 6) { //wait 5*6 = 30 sec for user to place tag
+        Serial.println("Timeout occured on adding tag!");
+        //should probably send something to the server here about the time out
+        return;
+      }
+    success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, T_OUT_5);
+  }
+  wdt_disable();
   //search through database to see if tag is already in there
   if(!tagSearch(uid)) {
     Serial.println("adding tag!");
@@ -583,34 +602,45 @@ void readNewTag(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
 
 //recieves request from database about which data to send
 void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
-//  wdt_enable(WDTO_8S);
+//  wdt_enable(WDTO_8S); //adds redundancy for safety, if regular timeout fails, then reset system
   Serial.println("waiting for request");
-  while(!client.available()) {
+  while(!client.available()) { //wait for server to send a request
+    if(!digitalRead(MODE)) {
+      return;
+    }
   }
-//  wdt_reset();
+//  wdt_disable();
 
   char c = client.read();
+  Serial.println("REQUEST FROM WEB APP: ");
+  Serial.println(c);
   switch (c) {
-    case 'O':
+    case 'O': //ID req
       sendId();
       break;
-    case 'D':
+    case 'D': //DB req
       sendDb();
       break;
-    case 'N':
+    case 'N': //Add Tag req
       Serial.println("N request get!");
-      getNewTagName(newUsrNm);
+      if(!getNewTagName(newUsrNm)) {
+        Serial.println("ERROR IN AQUIRING USERNAME");
+        return;
+      }
       client.stop(); //need to do this in order to run nfc tag
       readNewTag(newUsrNm, uid, uidLength);
       break;
-    case 'R':
+    case 'R': //Remove Tag req
       Serial.println("REMOVE USER NAME REQ");
-      getNewTagName(newUsrNm);
+      if(!getNewTagName(newUsrNm)) {
+        Serial.println("ERROR IN AQUIRING USERNAME");
+        return;
+      }
       Serial.print("Tag name Request: ");
       Serial.println(newUsrNm);
       deleteEntry(nameSearch(newUsrNm));
       break;
-    case 'L':
+    case 'L': //Log out notice
       Serial.println("LOG OUT");
       client.stop(); //user has logged out
       break;
@@ -618,9 +648,9 @@ void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
       Serial.println("INVALID REQUEST");
       break;
   }
-  wdt_disable();
 }
 
+//db error handling function
 void printError(EDB_Status err)
 {
   Serial.print("ERROR: ");
@@ -663,6 +693,7 @@ void stateSnake(uint8_t sSize, uint8_t red, uint8_t green, uint8_t blue, bool fr
   }
 }
 
+//turn off all leds, can be used for blinking effect
 void led_reset() {
   for(int i = 0; i < NUM_LEDS; i++) {
     strip.setPixelColor(i, strip.Color(0,0,0));
