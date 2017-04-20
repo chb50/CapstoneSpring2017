@@ -18,14 +18,14 @@ def main():
 def runConnection():
 
 	print("Running Connection")
-	name = "Cuck++" #make sure to append the termination character
+	name = "dickling" #make sure to append the termination character
 	request = "N" + name
 		# create a socket object
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
 	# universal name
 	host = '0.0.0.0';                       
-	port = 10000                               
+	port = 10000                                   
 
 	# bind to the port
 	serversocket.bind((host, port))                                  

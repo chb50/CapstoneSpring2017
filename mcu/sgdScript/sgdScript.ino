@@ -39,6 +39,10 @@
 #include <WiFi101.h>
 #include <Adafruit_PN532.h>
 #include <avr/wdt.h>
+#include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+  #include <avr/power.h>
+#endif
 
 #define TABLE_SIZE 4096 //this size is for the mega
 #define ENTRY_COUNT 10
@@ -54,9 +58,22 @@
 #define MEGA_WAKE 41
 #define PORT 10000
 
-//for NFC
+//for nfc
 #define T_OUT_1 1000
 #define T_OUT_10 10000
+
+//for leds
+/*NOTE: led color states:
+ * red flashing - waiting for nfc tag
+ * red freeze - found a tag, but not authorized to shoot
+ * green freeze - found a tag, authorized to shoot
+ * yellow freeze - attempting to connect to wifi
+ * blue freeze - wifi connection established
+ */
+#define LED_STATE 27
+#define NUM_LEDS 8
+#define BRIGHTNESS 50
+#define SNAKE_SIZE 4
 
 struct entry {
   //800 bytes for 10 entries
@@ -113,7 +130,7 @@ int z = 0;
 int status = WL_IDLE_STATUS;
 // if you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
-IPAddress server(192,168,1,164);  // numeric IP for Google (no DNS)
+IPAddress server(192,168,1,31);  // numeric IP for Google (no DNS)
 //char server[] = "www.google.com";    // name address for Google (using DNS)
 
 // Initialize the Ethernet client library
@@ -121,8 +138,11 @@ IPAddress server(192,168,1,164);  // numeric IP for Google (no DNS)
 // that you want to connect to (port 80 is default for HTTP):
 WiFiClient client;
 
+//led object
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_STATE, NEO_KHZ800 + NEO_RGB);
+
 void setup(void) {
-  Serial.begin(9600); //TODO: change to 115200 for final product
+  Serial.begin(9600);
   while (!Serial);
   Serial.println("Hello!");
 
@@ -132,7 +152,7 @@ void setup(void) {
   randomSeed(analogRead(0));
   //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
   deleteAll(); //for testing
-//  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
+  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
   // create table at with starting address 0
   if(db.open(DB_START) != EDB_OK) { 
     Serial.println("Database does not exist on this device");
@@ -164,6 +184,15 @@ void setup(void) {
   /*SMARTGUN SETUP*/
   smartGun.setFlags(AWAKE); //for now, assume that the device is owned by the user and that it is awake on startup
   smartGun.resetFlags(WIFI_CONN); //not connected to wifi yet
+
+  /*LED SETUP*/
+  #if defined (__AVR_ATtiny85__)
+    if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
+  #endif
+  Serial.begin(9600);
+  strip.setBrightness(BRIGHTNESS);
+  strip.begin();
+  strip.show(); // Initialize all pixels to 'off'
 
   /*WATCHDOG SETUP*/
   wdt_disable(); //always good to disable it, if it was left 'on' or you need init time
@@ -200,6 +229,7 @@ void loop(void) {
   if(digitalRead(MODE) == LOW) { //then we are not in wifi mode
     
     Serial.println("FIRING MODE ACTIVE");
+    stateSnake(SNAKE_SIZE, 255, 0, 0, false); //set leds to red, ocillate
 
     Serial.println("\nWaiting for an ISO14443A Card ...");
     success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, T_OUT_1);
@@ -221,9 +251,18 @@ void loop(void) {
 //         }
         dbCount();
         dbPrint();
-        tagSearch(uid) ? smartGun.setFlags(AUTH) : smartGun.resetFlags(AUTH); //set authorization;
+        
+        //set authorization
+        if(tagSearch(uid)) {
+          smartGun.setFlags(AUTH);
+          stateSnake(SNAKE_SIZE, 0, 255, 0, true); //led set to green, freeze
+        } else {
+          smartGun.resetFlags(AUTH);
+          stateSnake(SNAKE_SIZE, 255, 0, 0, true); //led set to red, freeze
+        }
         //ready gun to fire if authorization has been approved
-        smartGun.getFlags() & AUTH ? digitalWrite(FIRE_BUTTON, HIGH): digitalWrite(FIRE_BUTTON, LOW);
+        //WE ARE USING AN NMOS AS SWITCH, so its active low
+        smartGun.getFlags() & AUTH ? digitalWrite(FIRE_BUTTON, LOW): digitalWrite(FIRE_BUTTON, HIGH);
         
         uint8_t data[32];
   
@@ -259,6 +298,7 @@ void loop(void) {
       digitalWrite(MEGA_WAKE, HIGH);
 
       Serial.println("WIFI MODE ACTIVE");
+      stateSnake(SNAKE_SIZE, 255, 255, 0, false);//set leds to yellow, ocillate
       //deleteAll();
       
 //      //add nfc tag to database (for testing)
@@ -277,18 +317,21 @@ void loop(void) {
       // attempt to connect to WiFi network:
       while (status != WL_CONNECTED) {
         Serial.print("Attempting to connect to SSID: ");
+        stateSnake(SNAKE_SIZE, 255, 255, 0, true);//set leds to yellow, flash on every loop
         Serial.println(ssid);
         // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
         status = WiFi.begin(ssid, pass);
     
         // wait 10 seconds for connection:
         delay(10000);
+        led_reset();
       }
       //printWiFiStatus();
     
       Serial.println("\nStarting connection to server...");
       // if you get a connection, report back via serial:
-
+      led_reset();
+      stateSnake(SNAKE_SIZE, 255, 255, 0, true);//set leds to yellow, flash on every loop
       z = client.connect(server,PORT);
       if(z) {
         smartGun.setFlags(WIFI_CONN);
@@ -296,6 +339,8 @@ void loop(void) {
         Serial.println("error in client connection");
         return 0;
       }
+
+      stateSnake(SNAKE_SIZE, 0, 0, 255, true);//set leds to blue, freeze
 
       reqHandle(newUsrNm, uid, uidLength);
       
@@ -318,7 +363,7 @@ void loop(void) {
     Serial.flush();
     //sysRestart(); //restart the system, use if wifi back to nfc is giving you trouble
   }
-} /*** END OF LOOP ***/
+}
 
 //custom functions
 
@@ -335,7 +380,6 @@ int dbCount() {
   return db.count();
 }
 
-//prints out the database
 void dbPrint() {
   Serial.println("Printing database");
   for(int i = 1; i <= db.count(); ++i) {
@@ -356,7 +400,6 @@ void dbPrint() {
   }
 }
 
-//add an entry to the database
 void appendEntry(int id, char* userName, uint8_t* nfcTag)
 {
   Serial.print("Appending record...");
@@ -378,7 +421,6 @@ void appendEntry(int id, char* userName, uint8_t* nfcTag)
   if (result != EDB_OK) printError(result);
 }
 
-//remove all entries in database
 void deleteAll()
 {
   Serial.print("Truncating table...");
@@ -393,7 +435,6 @@ void deleteAll()
   db.clear();
 }
 
-//delete a specified entry in the database
 void deleteEntry(int recno)
 {
   Serial.print("Deleting recno");
@@ -406,7 +447,6 @@ void deleteEntry(int recno)
   db.deleteRec(recno);
 }
 
-//search through database by tag number
 uint8_t tagSearch(uint8_t* uid) {
   for (int recno = 1; recno <= db.count(); recno++)
   {
@@ -439,17 +479,19 @@ uint8_t nameSearch(char* userName) {
     if (result == EDB_OK)
     {
       int match = 1;
-      if(!strcmp(userName, entry.userName)) {
-        return recno;
+      strcmp(entry.userName, userName);
+      
+      if(match) {
+        Serial.println("Name Found!");
+        return 1;
       }
     }
     else printError(result);
   }
-  Serial.println("ID not found!");
+  Serial.println("Name not found!");
   return 0;
 }
 
-//send one time id to web app
 void sendId() {
   if(smartGun.getFlags() & WIFI_CONN){
     Serial.println("Sending ID");
@@ -460,7 +502,6 @@ void sendId() {
 }
 
 //TODO: need to retest this
-//send database to web app for viewing
 void sendDb() {
   if (smartGun.getFlags() & WIFI_CONN) { //nfc craps out when we try to send information
     Serial.println("Sending DB info");
@@ -485,13 +526,11 @@ void sendDb() {
       }
     }
     
-    client.println("SGD:END"); //ending token
   } else {
     Serial.println("error in client connection");
   }
 }
 
-//get a user name specified by the web app and store into local variable
 uint8_t getNewTagName(char* newUsrNm) {
   wdt_enable(WDTO_8S); //watchdog set to 8 sec for infinite loop in this function
   if(smartGun.getFlags() & WIFI_CONN) { //check to see if we connected to the webapp
@@ -512,7 +551,7 @@ uint8_t getNewTagName(char* newUsrNm) {
     }while (client.available());
     wdt_reset();
     wdt_disable();
-    client.print("NEW");
+    client.print("NAME_GET");
     Serial.println(newUsrNm);
     return 1;
   } else {
@@ -522,7 +561,6 @@ uint8_t getNewTagName(char* newUsrNm) {
   }
 }
 
-//read a tag and store it to the database
 void readNewTag(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
   uint8_t success;
 
@@ -545,10 +583,11 @@ void readNewTag(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
 
 //recieves request from database about which data to send
 void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
-  //wdt_enable(WDTO_8S);
+//  wdt_enable(WDTO_8S);
   Serial.println("waiting for request");
-  while(!client.available());
-  //wdt_reset();
+  while(!client.available()) {
+  }
+//  wdt_reset();
 
   char c = client.read();
   switch (c) {
@@ -559,13 +598,21 @@ void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
       sendDb();
       break;
     case 'N':
+      Serial.println("N request get!");
       getNewTagName(newUsrNm);
-      client.stop();
+      client.stop(); //need to do this in order to run nfc tag
       readNewTag(newUsrNm, uid, uidLength);
       break;
     case 'R':
+      Serial.println("REMOVE USER NAME REQ");
       getNewTagName(newUsrNm);
+      Serial.print("Tag name Request: ");
+      Serial.println(newUsrNm);
       deleteEntry(nameSearch(newUsrNm));
+      break;
+    case 'L':
+      Serial.println("LOG OUT");
+      client.stop(); //user has logged out
       break;
     default:
       Serial.println("INVALID REQUEST");
@@ -574,7 +621,6 @@ void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
   wdt_disable();
 }
 
-//print the database error if any
 void printError(EDB_Status err)
 {
   Serial.print("ERROR: ");
@@ -591,6 +637,38 @@ void printError(EDB_Status err)
       Serial.println("OK");
       break;
   }
+}
+
+//led function, displays state of gun
+//for now, assume 255 passed in for rgb
+void stateSnake(uint8_t sSize, uint8_t red, uint8_t green, uint8_t blue, bool freeze) {
+  uint8_t snakeSize = sSize;
+  int snakeHead = NUM_LEDS - 1;
+  while (snakeHead + snakeSize >= 0) {
+    if(freeze == false) { //this pauses the led output
+      for(int i = 0; i < NUM_LEDS; i++) {
+        strip.setPixelColor(i, strip.Color(0,0,0));
+      }
+      strip.show();
+    }
+    uint8_t r = red; uint8_t g = green; uint8_t b = blue;
+    for(int i = snakeHead; i < snakeHead + snakeSize; i++) {
+      if(i >= snakeHead and i < snakeHead + snakeSize) {
+        strip.setPixelColor(i, strip.Color(green, red, blue));
+      } 
+    }
+    strip.show();
+    delay(50);
+    snakeHead--;
+  }
+}
+
+void led_reset() {
+  for(int i = 0; i < NUM_LEDS; i++) {
+    strip.setPixelColor(i, strip.Color(0,0,0));
+  }
+  strip.show();
+  delay(100);
 }
 
 /* EXAMPLE FUNCTION FOR SIMULATION */
