@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask import session, flash
 from flask import jsonify
+import json
 import os, sys
 from functools import wraps
 import MySQLdb
@@ -23,7 +24,7 @@ host = '0.0.0.0'
 port = 10000
 
 #Open db connection
-db = MySQLdb.connect("localhost","SGDAdmin","password","WEBAPP")
+db = MySQLdb.connect("localhost","root","password","py")
 
 #prepare cursor object
 cursor = db.cursor()
@@ -324,7 +325,7 @@ def sgdb():
 		results = []
 		mutex.release()
 
-		return render_template("databasesgd.html", tableSGDB=tableSGDB, timeout=False)
+		return render_template("databasesgd.html", tableSGDB=tableSGDB)
 	else:
 		if load_counter < 3:
 			webapp_request = "D"
@@ -338,7 +339,7 @@ def sgdb():
 			webapp_request = None
 			returnFlag = False
 			mutex.release()
-			return render_template("databasesgd.html", tableSGDB=[], timeout=True)
+			return render_template("databasesgd_timeout.html", tableSGDB=[])
 
 
 	return redirect(url_for('sgdb'))
