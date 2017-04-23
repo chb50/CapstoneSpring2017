@@ -130,7 +130,7 @@ int z = 0;
 int status = WL_IDLE_STATUS;
 // if you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
-IPAddress server(192,168,1,31);  // numeric IP for Google (no DNS)
+IPAddress server(192,168,1,164);  // numeric IP for Google (no DNS)
 //char server[] = "www.google.com";    // name address for Google (using DNS)
 
 // Initialize the Ethernet client library
@@ -140,6 +140,7 @@ WiFiClient client;
 
 //led object
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_STATE, NEO_KHZ800 + NEO_RGB);
+
 
 void setup(void) {
   Serial.begin(9600);
@@ -151,8 +152,8 @@ void setup(void) {
 
   randomSeed(analogRead(0));
   //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
-//  deleteAll(); //for testing
-//  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
+  deleteAll(); //for testing
+  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
   // create table at with starting address 0
   if(db.open(DB_START) != EDB_OK) { 
     Serial.println("Database does not exist on this device");
@@ -222,7 +223,7 @@ void loop(void) {
 
   //NOTE: need this print to store and hold the username on the database
   //WATCH OUT FOR THIS, it may give bugs if we try to add multiple tags
-  //Serial.print(newUsrNm);
+  Serial.print(newUsrNm);
 //  Serial.println("\nTime to change mode!");
 //  delay(5000);
 
@@ -234,7 +235,7 @@ void loop(void) {
     wdt_enable(WDTO_2S);
     Serial.println("\nWaiting for an ISO14443A Card ...");
     success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, T_OUT_1);
-    wdt_reset(); 
+    wdt_disable(); 
         
     if (success) {
       // Display some basic information about the card
@@ -555,7 +556,7 @@ uint8_t getNewTagName(char* newUsrNm) {
       if (!client.available() or i == 15) {
         newUsrNm[i] = '\0';
       }
-    }while (client.available() and newUsrNm[i] != '\0');
+    }while (client.available());
 //    wdt_disable();
     client.print("NAME_GET");
     Serial.println(newUsrNm);
@@ -605,15 +606,10 @@ void reqHandle(char* newUsrNm, uint8_t* uid, uint8_t uidLength) {
 //  wdt_enable(WDTO_8S); //adds redundancy for safety, if regular timeout fails, then reset system
   Serial.println("waiting for request");
   while(!client.available()) { //wait for server to send a request
-    if(!digitalRead(MODE)) {
-      return;
-    }
   }
 //  wdt_disable();
 
   char c = client.read();
-  Serial.println("REQUEST FROM WEB APP: ");
-  Serial.println(c);
   switch (c) {
     case 'O': //ID req
       sendId();
