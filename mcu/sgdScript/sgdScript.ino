@@ -152,8 +152,8 @@ void setup(void) {
 
   randomSeed(analogRead(0));
   //NOTE: if you want to upload a new script to the arduino, you should reset the db manually by using the code below
-  deleteAll(); //for testing
-  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
+//  deleteAll(); //for testing
+//  db.create(DB_START, TABLE_SIZE, (unsigned int)sizeof(entry)); //if we want to reset the database
   // create table at with starting address 0
   if(db.open(DB_START) != EDB_OK) { 
     Serial.println("Database does not exist on this device");
@@ -230,8 +230,12 @@ void loop(void) {
   if(digitalRead(MODE) == LOW) { //then we are not in wifi mode
     
     Serial.println("FIRING MODE ACTIVE");
-    stateSnake(SNAKE_SIZE, 255, 0, 0, false); //set leds to red, ocillate
 
+    if(!(smartGun.getFlags() & AUTH)) {
+      stateSnake(SNAKE_SIZE, 255, 0, 0, false); //set leds to red, ocillate
+    }
+
+    smartGun.resetFlags(AUTH);
     wdt_enable(WDTO_2S);
     Serial.println("\nWaiting for an ISO14443A Card ...");
     success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, T_OUT_1);
@@ -254,13 +258,12 @@ void loop(void) {
 //         }
         dbCount();
         dbPrint();
-        
+
         //set authorization
         if(tagSearch(uid)) {
           smartGun.setFlags(AUTH);
           stateSnake(SNAKE_SIZE, 0, 255, 0, true); //led set to green, freeze
         } else {
-          smartGun.resetFlags(AUTH);
           stateSnake(SNAKE_SIZE, 255, 0, 0, true); //led set to red, freeze
         }
         //ready gun to fire if authorization has been approved
